@@ -1,0 +1,9 @@
+[package]
+name = "agent"
+version = "0.1.0"
+edition = "2021"
+
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+
+[dependencies]
