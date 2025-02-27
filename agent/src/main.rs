@@ -1,5 +1,5 @@
-use tokio_modbus::prelude::{*, Reader}; // Import Reader
-use tokio_modbus::client::tcp;
+use tokio_modbus::prelude::{*, Reader, Writer}; // Import Reader and Writer
+use tokio_modbus::client::{tcp, Context};
 use tokio::net::TcpStream;
 use std::net::SocketAddr;
 use serde::{Serialize, Deserialize};
@@ -10,6 +10,14 @@ use std::{fs::OpenOptions, io::Write};
 struct ModbusData {
     time: String,
     aq1: u16,
+}
+
+async fn stop_plc(ctx: &mut Context) {
+    // Assuming V1.3 is mapped to holding register 40001 (Modbus address 0)
+    let stop_register = 0; // Modbus address for V1.3 (40001 in Modbus is address 0)
+    let stop_value = 0b00001000; // Set bit 3 (V1.3) to 1 to stop the PLC
+    ctx.write_single_register(stop_register, stop_value).await.unwrap();
+    println!("PLC stopped by writing {} to register {}", stop_value, stop_register);
 }
 
 #[tokio::main]
@@ -40,6 +48,13 @@ async fn main() {
         file.write_all(json_data.as_bytes()).unwrap();
 
         println!("AQ1 Value: {}", aq1_value);
+
+        // Example condition to stop the PLC
+        if aq1_value == 4 {
+            stop_plc(&mut ctx).await;
+            break; // Exit the loop after stopping the PLC
+        }
+
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     }
 }
