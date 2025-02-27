@@ -7,3 +7,8 @@ edition = "2021"
 linker = "arm-linux-gnueabihf-gcc"
 
 [dependencies]
+tokio = { version = "1", features = ["full"] }
+tokio-modbus = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
