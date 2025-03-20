@@ -1,4 +1,4 @@
-use tokio_modbus::client::Context;
+use tokio_modbus::client::{Context, Reader};
 use tokio_modbus::prelude::Writer;
 
 pub trait PlcApi {
@@ -19,4 +19,23 @@ pub async fn stop_plc(ctx: &mut Context) -> Result<(), Box<dyn std::error::Error
         stop_value, stop_register
     );
     Ok(())
+}
+pub async fn write_to_plc(
+    ctx: &mut Context,
+    register: u16,
+    value: u16,
+) -> Result<(), Box<dyn std::error::Error>> {
+    ctx.write_single_register(register, value).await?;
+    println!("Wrote {} to register {}", value, register);
+    Ok(())
+}
+pub async fn read_from_plc(
+    ctx: &mut Context,
+    start_register: u16,
+    end_register: u16,
+) -> Result<u16, Box<dyn std::error::Error>> {
+    let data = ctx.read_holding_registers(start_register, end_register).await?;
+    let result = data[0];
+
+    Ok(result)
 }

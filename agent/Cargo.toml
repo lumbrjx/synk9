@@ -2,6 +2,11 @@
 name = "agent"
 version = "0.1.0"
 edition = "2021"
+default-run = "agent"
+
+[[bin]]
+name = "mock"
+path = "src/mock.rs"
 
 [target.armv7-unknown-linux-gnueabihf]
 linker = "arm-linux-gnueabihf-gcc"
@@ -14,3 +19,7 @@ serde_json = "1"
 chrono = "0.4"
 rxrust = "0.15.0"
 anyhow = "1.0.97"
+dotenv = "0.15.0"
+tokio-tungstenite = "0.18"
+futures = "0.3"
+url = "2.5.4"
