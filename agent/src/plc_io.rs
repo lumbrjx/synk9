@@ -1,6 +1,19 @@
+use serde::{Deserialize, Serialize};
 use tokio_modbus::client::{Context, Reader};
 use tokio_modbus::prelude::Writer;
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct WriteData {
+   pub register: u16,
+    pub value: u16,
+}
+
+/// Modbus Data
+#[derive(Serialize, Deserialize)]
+pub struct ModbusData {
+   pub time: String,
+    pub aq1: u16,
+}
 pub trait PlcApi {
     fn init(&mut self) -> Result<(), String>;
     fn start_plc(&mut self) -> Result<(), String>;

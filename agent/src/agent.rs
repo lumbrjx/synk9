@@ -7,11 +7,16 @@ use tokio::time::{sleep, Duration};
 use tokio_modbus::client::Context;
 use tokio_tungstenite::{tungstenite::protocol::Message, MaybeTlsStream, WebSocketStream};
 
-use crate::ModbusData;
-use crate::{
-    plc_io::{read_from_plc, stop_plc, write_to_plc},
-    ChEvent,
-};
+use crate::plc_io::{read_from_plc, stop_plc, write_to_plc, ModbusData};
+use serde::{Deserialize, Serialize};
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type_of_event", content = "data")]
+
+pub enum ChEvent {
+    Wait,
+    Stop,
+    Write { reg: u16, val: u16 },
+}
 
 pub struct Agent {
     pub slave_ctx: Context,
@@ -45,6 +50,7 @@ impl Agent {
                 write_to_plc(&mut self.slave_ctx, reg, val).await?;
                 Ok(())
             }
+            ChEvent::Wait {} => Ok(()),
         }
     }
     // TODO!: make it dynamique
