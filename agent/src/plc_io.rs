@@ -4,14 +4,14 @@ use tokio_modbus::prelude::Writer;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct WriteData {
-   pub register: u16,
+    pub register: u16,
     pub value: u16,
 }
 
 /// Modbus Data
 #[derive(Serialize, Deserialize)]
 pub struct ModbusData {
-   pub time: String,
+    pub time: String,
     pub aq1: u16,
 }
 pub trait PlcApi {
@@ -47,7 +47,9 @@ pub async fn read_from_plc(
     start_register: u16,
     end_register: u16,
 ) -> Result<u16, Box<dyn std::error::Error>> {
-    let data = ctx.read_holding_registers(start_register, end_register).await?;
+    let data = ctx
+        .read_holding_registers(start_register, end_register)
+        .await?;
     let result = data[0];
 
     Ok(result)
