@@ -96,35 +96,6 @@ pub struct Agent {
     pub state: Arc<Mutex<SharedState>>,
 }
 
-async fn persist_sensor(
-    id: &str,
-    label: &str,
-    start_register: u16,
-    end_register: u16,
-) -> Result<(), Box<dyn StdError>> {
-    let event = format!("{},{},{},{}\n", id, label, start_register, end_register);
-    let home = env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    let cache_path = format!("{}/.cache/cache.txt", home);
-
-    let mut file = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(cache_path)?;
-    file.write_all(event.as_bytes())?;
-    Ok(())
-}
-
-async fn remove_sensor_from_file(id: &str) -> Result<(), Box<dyn StdError>> {
-    let home = env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-    let cache_path = format!("{}/.cache/cache.txt", home);
-
-    let content = std::fs::read_to_string(&cache_path).unwrap_or_default();
-    let mut lines: Vec<String> = content.lines().map(String::from).collect();
-
-    lines.retain(|line| !line.starts_with(&format!("{},", id)));
-    std::fs::write(&cache_path, lines.join("\n"))?;
-    Ok(())
-}
 
 impl Agent {
     pub fn new(
@@ -161,8 +132,6 @@ impl Agent {
                 end_register,
                 start_register,
             } => {
-                persist_sensor(id, label, *start_register, *end_register).await?;
-
                 let new_sensor = SensorConfig {
                     id: id.to_string(),
                     label: label.to_string(),
@@ -174,7 +143,6 @@ impl Agent {
                 state.add_sensor(new_sensor).await;
             }
             ChEvent::RemoveSensor { id } => {
-                remove_sensor_from_file(id).await?;
 
                 let mut state = self.state.lock().await;
                 state.remove_sensor(id).await;
@@ -198,7 +166,7 @@ impl Agent {
 
         let state = state_arc.lock().await;
         let rx = state.get_subscriber().await;
-        drop(state); 
+        drop(state);
 
         tokio::spawn(async move {
             monitor_sensors(agent, rx).await;
