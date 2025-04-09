@@ -1,0 +1,54 @@
+services:
+  database:
+    image: postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env.docker
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME} -h localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    command: ["postgres", "-c", "statement_timeout=30s"]
+
+  redis:
+    image: bitnami/redis:6.2
+    hostname: redis
+    container_name: redis
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - ALLOW_EMPTY_PASSWORD=no
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/bitnami/redis
+    healthcheck:
+      test: ["CMD","redis-cli", "-h", "localhost", "ping"]
+
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - "8086:8086"
+    environment:
+       DOCKER_INFLUXDB_INIT_MODE: setup
+       DOCKER_INFLUXDB_INIT_USERNAME: admin
+       DOCKER_INFLUXDB_INIT_PASSWORD: adminpassword
+       DOCKER_INFLUXDB_INIT_ORG: myorg
+       DOCKER_INFLUXDB_INIT_BUCKET: machines_logs
+       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: mypassword
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  pg_data:
+  influxdb_data:
