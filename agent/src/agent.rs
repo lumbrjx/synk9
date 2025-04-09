@@ -1,7 +1,4 @@
 use chrono::Local;
-use futures::io;
-use std::env;
-use std::fs::File;
 use std::sync::Arc;
 use tokio::sync::watch;
 use tokio::sync::Mutex;
@@ -10,8 +7,6 @@ use tokio::time::{self, Duration};
 use futures::{stream::SplitSink, SinkExt};
 
 use std::error::Error as StdError;
-use std::fs::OpenOptions;
-use std::io::Write;
 use std::pin::Pin;
 use tokio::net::TcpStream;
 use tokio::time::sleep;
@@ -56,12 +51,13 @@ pub enum ChEvent {
     },
     PauseAgent,
     HealthCheck,
-    RequestRefresh,
+    CleanUp,
 }
 
 #[derive(Debug)]
 pub struct SharedState {
     pub registered_sensors: Vec<SensorConfig>,
+    pub paused_agent: bool,
     pub tx: watch::Sender<Vec<SensorConfig>>,
 }
 
@@ -70,6 +66,7 @@ impl SharedState {
         let (tx, _) = watch::channel(Vec::new());
         Arc::new(Mutex::new(Self {
             registered_sensors: Vec::new(),
+            paused_agent: false,
             tx,
         }))
     }
@@ -83,9 +80,27 @@ impl SharedState {
         self.registered_sensors.retain(|sensor| sensor.id != id);
         let _ = self.tx.send(self.registered_sensors.clone());
     }
+    async fn cleanup_sensors(&mut self) {
+        self.registered_sensors.clear();
+        let _ = self.tx.send(self.registered_sensors.clone());
+    }
 
     async fn get_subscriber(&self) -> watch::Receiver<Vec<SensorConfig>> {
         self.tx.subscribe()
+    }
+    pub async fn edit_sensor(
+        &mut self,
+        id: &str,
+        new_label: String,
+        new_start_register: u16,
+        new_end_register: u16,
+    ) {
+        if let Some(sensor) = self.registered_sensors.iter_mut().find(|s| s.id == id) {
+            sensor.label = new_label;
+            sensor.start_register = new_start_register;
+            sensor.end_register = new_end_register;
+        }
+        let _ = self.tx.send(self.registered_sensors.clone());
     }
 }
 
@@ -95,7 +110,6 @@ pub struct Agent {
     pub ws_tx: WsWriter,
     pub state: Arc<Mutex<SharedState>>,
 }
-
 
 impl Agent {
     pub fn new(
@@ -114,8 +128,36 @@ impl Agent {
 
     pub async fn handle_master_event(&mut self) -> Result<(), Box<dyn StdError>> {
         match &self.event {
+            ChEvent::CleanUp => {
+                let mut state = self.state.lock().await;
+                if state.paused_agent == true {
+                    self.ws_tx
+                        .send(Message::Text(String::from("Agent is locked")))
+                        .await?;
+                    return Ok(());
+                }
+                state.cleanup_sensors().await;
+            }
+            ChEvent::HealthCheck => {
+                let locked_state = self.state.lock().await;
+                if locked_state.paused_agent == true {
+                    self.ws_tx
+                        .send(Message::Text(serde_json::to_string(
+                            &locked_state.registered_sensors,
+                        )?))
+                        .await?;
+                    return Ok(());
+                }
+            }
             ChEvent::Stop => {
                 println!("Received STOP event -> Stopping PLC.");
+                if self.state.lock().await.paused_agent == true {
+                    self.ws_tx
+                        .send(Message::Text(String::from("Agent is locked")))
+                        .await?;
+                    return Ok(());
+                }
+
                 stop_plc(&mut self.slave_ctx).await?;
             }
             ChEvent::Write { reg, val } => {
@@ -123,6 +165,12 @@ impl Agent {
                     "Received WRITE event -> Writing {} to register {}.",
                     val, reg
                 );
+                if self.state.lock().await.paused_agent == true {
+                    self.ws_tx
+                        .send(Message::Text(String::from("Agent is locked")))
+                        .await?;
+                    return Ok(());
+                }
                 write_to_plc(&mut self.slave_ctx, *reg, *val).await?;
             }
             ChEvent::Wait {} => {}
@@ -140,14 +188,45 @@ impl Agent {
                 };
 
                 let mut state = self.state.lock().await;
+                if state.paused_agent == true {
+                    self.ws_tx
+                        .send(Message::Text(String::from("Agent is locked")))
+                        .await?;
+                    return Ok(());
+                }
+
                 state.add_sensor(new_sensor).await;
             }
             ChEvent::RemoveSensor { id } => {
-
                 let mut state = self.state.lock().await;
+                if state.paused_agent == true {
+                    self.ws_tx
+                        .send(Message::Text(String::from("Agent is locked")))
+                        .await?;
+                    return Ok(());
+                }
                 state.remove_sensor(id).await;
 
                 println!("Sensor {} removed successfully", id);
+            }
+            ChEvent::EditSensor {
+                id,
+                label,
+                start_register,
+                end_register,
+            } => {
+                let mut state = self.state.lock().await;
+                if state.paused_agent == true {
+                    self.ws_tx
+                        .send(Message::Text(String::from("Agent is locked")))
+                        .await?;
+                    return Ok(());
+                }
+                state
+                    .edit_sensor(id, label.clone(), *start_register, *end_register)
+                    .await;
+
+                println!("Sensor {} edited successfully", id);
             }
             _ => {}
         }

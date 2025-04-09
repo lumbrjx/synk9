@@ -28,9 +28,9 @@ async fn main() {
             // Clone the write handle and spawn a task to send events
             let ws_write_clone = Arc::clone(&ws_write);
             tokio::spawn(async move {
-                sleep(Duration::from_secs(5)).await;
+                sleep(Duration::from_secs(1)).await;
                 let stop_msg =
-                    json!({"type_of_event": "add_sensor", "data": {"id":"idddd" ,"label":"PT100", "start_register": 512, "end_register": 1}})
+                    json!({"type_of_event": "add_sensor", "data": {"id":"idddd" ,"label":"PT100", "start_register": 125, "end_register": 1}})
                         .to_string();
                 let _ = ws_write_clone
                     .lock()

@@ -27,6 +27,18 @@ pub async fn handle_websocket_messages(
             Ok(Message::Text(text)) => {
                 if let Ok(event) = serde_json::from_str::<WsCmdEvent>(&text) {
                     match event.type_of_event.as_str() {
+                        "clean_up" => {
+                            if tx.send(ChEvent::CleanUp).await.is_err() {
+                                eprintln!("Main loop dropped, stopping WebSocket listener.");
+                                break;
+                            }
+                        }
+                        "health_check" => {
+                            if tx.send(ChEvent::HealthCheck).await.is_err() {
+                                eprintln!("Main loop dropped, stopping WebSocket listener.");
+                                break;
+                            }
+                        }
                         "stop" => {
                             if tx.send(ChEvent::Stop).await.is_err() {
                                 eprintln!("Main loop dropped, stopping WebSocket listener.");
@@ -51,6 +63,27 @@ pub async fn handle_websocket_messages(
                 }
                 if let Ok(event) = serde_json::from_str::<WsConfigEvent>(&text) {
                     match event.type_of_event.as_str() {
+                        "pause_agent" => {
+                            if tx.send(ChEvent::PauseAgent).await.is_err() {
+                                eprintln!("Main loop dropped, stopping WebSocket listener.");
+                                break;
+                            }
+                        }
+                        "edit_sensor" => {
+                            if tx
+                                .send(ChEvent::EditSensor {
+                                    id: event.data.id,
+                                    label: event.data.label,
+                                    start_register: event.data.start_register,
+                                    end_register: event.data.end_register,
+                                })
+                                .await
+                                .is_err()
+                            {
+                                eprintln!("Main loop dropped, stopping WebSocket listener.");
+                                break;
+                            }
+                        }
                         "add_sensor" => {
                             if tx
                                 .send(ChEvent::AddSensor {
