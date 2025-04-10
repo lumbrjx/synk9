@@ -23,3 +23,6 @@ dotenv = "0.15.0"
 tokio-tungstenite = "0.18"
 futures = "0.3"
 url = "2.5.4"
+rust_socketio = { version = "*", features = ["async"] }
+validator = { version = "0.19", features = ["derive"] }
+thiserror = "1.0"
