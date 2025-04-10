@@ -1,12 +1,12 @@
 services:
-  database:
+  auto-database:
     image: postgres
     volumes:
       - pg_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     env_file:
-      - .env.docker
+      - .env
     environment:
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_USER=${DB_USERNAME}
@@ -19,10 +19,9 @@ services:
       start_period: 30s
     command: ["postgres", "-c", "statement_timeout=30s"]
 
-  redis:
+  auto-redis:
     image: bitnami/redis:6.2
     hostname: redis
-    container_name: redis
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - ALLOW_EMPTY_PASSWORD=no
@@ -33,7 +32,7 @@ services:
     healthcheck:
       test: ["CMD","redis-cli", "-h", "localhost", "ping"]
 
-  influxdb:
+  auto-influxdb:
     image: influxdb:latest
     ports:
       - "8086:8086"

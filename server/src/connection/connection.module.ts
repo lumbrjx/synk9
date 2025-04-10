@@ -31,6 +31,7 @@ import { InfluxDB } from '@influxdata/influxdb-client';
 			useFactory: (config: ConfigService) => {
 				return new Redis({
 					host: config.get('REDIS_HOST'),
+					password: config.get('REDIS_PASSWORD'),
 					port: config.get<number>('REDIS_PORT'),
 				});
 			},
