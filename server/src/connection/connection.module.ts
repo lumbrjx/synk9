@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { INFLUX_CLIENT, REDIS_CLIENT } from './constants';
 import { InfluxDB } from '@influxdata/influxdb-client';
+import * as path from 'path';
 
 @Module({
 	imports: [
@@ -19,34 +20,35 @@ import { InfluxDB } from '@influxdata/influxdb-client';
 				username: config.get('DB_USERNAME'),
 				password: config.get('DB_PASSWORD'),
 				database: config.get('DB_NAME'),
-				entities: [],
+				entities:
+					[path.join(__dirname, '../**/*.entity.{ts,js}')],
 				synchronize: true,
-			}),
+		}),
 		}),
 	],
-	providers: [
-		{
-			provide: REDIS_CLIENT,
-			inject: [ConfigService],
-			useFactory: (config: ConfigService) => {
-				return new Redis({
-					host: config.get('REDIS_HOST'),
-					password: config.get('REDIS_PASSWORD'),
-					port: config.get<number>('REDIS_PORT'),
-				});
-			},
+providers: [
+	{
+		provide: REDIS_CLIENT,
+		inject: [ConfigService],
+		useFactory: (config: ConfigService) => {
+			return new Redis({
+				host: config.get('REDIS_HOST'),
+				password: config.get('REDIS_PASSWORD'),
+				port: config.get<number>('REDIS_PORT'),
+			});
 		},
-		{
-			provide: INFLUX_CLIENT,
-			inject: [ConfigService],
-			useFactory: (config: ConfigService) => {
-				return new InfluxDB({
-					url: config.get('INFLUX_URL') as string,
-					token: config.get('INFLUX_TOKEN'),
-				});
-			},
+	},
+	{
+		provide: INFLUX_CLIENT,
+		inject: [ConfigService],
+		useFactory: (config: ConfigService) => {
+			return new InfluxDB({
+				url: config.get('INFLUX_URL') as string,
+				token: config.get('INFLUX_TOKEN'),
+			});
 		},
-	],
+	},
+],
 	exports: [REDIS_CLIENT, INFLUX_CLIENT],
 })
 export class ConnectionModule { }
