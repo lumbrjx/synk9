@@ -11,7 +11,8 @@ pub struct WriteData {
 #[derive(Serialize, Deserialize)]
 pub struct ModbusData {
     pub time: String,
-    pub aq1: u16,
+    pub value: u16,
+    pub key: String,
 }
 
 pub async fn stop_plc(ctx: &mut Context) -> Result<(), Box<dyn std::error::Error>> {

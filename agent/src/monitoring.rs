@@ -68,10 +68,11 @@ async fn process_single_sensor(
 
     let modbus_data = plc_io::ModbusData {
         time: timestamp,
-        aq1: sensor_value,
+        value: sensor_value,
+        key: sensor.label
     };
 
-    agent_guard.send_json("sensor_data", &modbus_data).await?;
+    agent_guard.send_json("monitoring_streamline", &modbus_data).await?;
 
     Ok(())
 }

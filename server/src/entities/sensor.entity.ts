@@ -15,9 +15,9 @@ export class Sensor {
 	description: string;
 
 	@Column()
-	startRegister: number;
+	start_register: number;
 
 	@Column()
-	endRegister: number;
+	end_register: number;
 }
 

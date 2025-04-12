@@ -13,7 +13,7 @@ pub async fn setup_socket_io(
 ) -> Result<Client, Box<dyn StdError>> {
     let socket = ClientBuilder::new(url)
         .namespace("/")
-        .on("test", move |payload: Payload, socket: Client| {
+        .on("data", move |payload: Payload, socket: Client| {
             let tx = tx.clone();
 
             async move {
@@ -37,8 +37,7 @@ pub async fn setup_socket_io(
                     }
                 }
 
-                // Send acknowledgment
-                if let Err(e) = socket.emit("test", json!({"status": "received"})).await {
+                if let Err(e) = socket.emit("data", json!({"status": "received"})).await {
                     eprintln!("Failed to send acknowledgment: {}", e);
                 }
             }

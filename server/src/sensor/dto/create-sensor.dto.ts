@@ -1,6 +1,6 @@
 import { IsNumber, IsString } from "class-validator";
 
-export class CreateAgentDto {
+export class CreateSensorDto {
 	@IsString()
 	name: string;
 
@@ -13,9 +13,4 @@ export class CreateAgentDto {
 	@IsNumber()
 	end_register: number;
 
-	@IsString()
-	plcId: string;
-
-	@IsString()
-	fingerprint: string;
 }
