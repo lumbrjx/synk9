@@ -2,15 +2,14 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { AgentService } from './agent.service';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { UpdateAgentDto } from './dto/update-agent.dto';
-import { DeleteAgentDto } from './dto/delete-agent.dto';
 
 @Controller('agent')
 export class AgentController {
 	constructor(private readonly agentService: AgentService) { }
 
 	@Post()
-	create(@Body() createAgentDto: CreateAgentDto) {
-		return this.agentService.create(createAgentDto);
+	async create(@Body() createAgentDto: CreateAgentDto) {
+		return await this.agentService.create(createAgentDto);
 	}
 
 	@Get()
@@ -23,13 +22,13 @@ export class AgentController {
 		return this.agentService.findOne(id);
 	}
 
-	@Patch()
-	update(@Body() updateAgentDto: UpdateAgentDto) {
-		return this.agentService.update(updateAgentDto);
+	@Patch(':id')
+	async update(@Param('id') id: string, @Body() updateAgentDto: UpdateAgentDto) {
+		return await this.agentService.update(id, updateAgentDto);
 	}
 
-	@Delete()
-	remove(@Body() deleteAgentDto: DeleteAgentDto) {
-		return this.agentService.remove(deleteAgentDto.id);
+	@Delete(':id')
+	async remove(@Param('id') id: string) {
+		return await this.agentService.remove(id);
 	}
 }

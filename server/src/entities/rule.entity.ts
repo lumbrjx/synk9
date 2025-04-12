@@ -1,19 +1,23 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { Sensor } from './sensor.entity';
 import { ProcessStep } from './process-steps.entity';
 
 @Entity()
 export class Rule {
 	@PrimaryGeneratedColumn("uuid")
-  id: string;
+	id: string;
 
-  @ManyToOne(() => Sensor, { eager: true })
-  sensor: Sensor;
+	@ManyToOne(() => Sensor, { eager: true })
+	sensor: Sensor;
 
-  @Column('text') 
-  expectedValue: string;
+	@CreateDateColumn({ type: 'timestamp' })
+	createdAt: Date;
 
-  @ManyToOne(() => ProcessStep, step => step.rules, { onDelete: 'CASCADE' })
-  step: ProcessStep;
+	@Column('text')
+	expectedValue: number;
+
+	@ManyToOne(() => ProcessStep, step => step.rules, { onDelete: 'CASCADE' })
+	@JoinColumn({ name: 'id' })
+	step: ProcessStep;
 }
 

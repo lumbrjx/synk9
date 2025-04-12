@@ -1,25 +1,29 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
 import { Process } from './process.entity';
 import { Rule } from './rule.entity';
 
 @Entity()
 export class ProcessStep {
 	@PrimaryGeneratedColumn("uuid")
-  id: string;
+	id: string;
 
-  @Column()
-  name: string;
+	@Column()
+	name: string;
 
-  @Column()
-  description: string;
+	@Column()
+	description: string;
 
-  @Column()
-  createdAt: Date;
+	@Column({ default: false })
+	skip: boolean;
 
-  @ManyToOne(() => Process, process => process.steps, { onDelete: 'CASCADE' })
-  process: Process;
+	@CreateDateColumn({ type: 'timestamp' })
+	createdAt: Date;
 
-  @OneToMany(() => Rule, rule => rule.step, { cascade: true })
-  rules: Rule[];
+
+	@ManyToOne(() => Process, process => process.steps, { onDelete: 'CASCADE' })
+	process: Process;
+
+	@OneToMany(() => Rule, rule => rule.step, { cascade: true })
+	rules: Rule[];
 }
 

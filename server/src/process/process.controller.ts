@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ProcessService } from './process.service';
-import { CreateProcessDto, CreateProcessStepDto } from './dto/create-process.dto';
+import { CreateProcessDto } from './dto/create-process.dto';
 import { UpdateProcessDto } from './dto/update-process.dto';
 
 @Controller('process')
@@ -19,16 +19,16 @@ export class ProcessController {
 
 	@Get(':id')
 	findOne(@Param('id') id: string) {
-		return this.processService.findOne(+id);
+		return this.processService.findOne(id);
 	}
 
 	@Patch(':id')
 	update(@Param('id') id: string, @Body() updateProcessDto: UpdateProcessDto) {
-		return this.processService.update(+id, updateProcessDto);
+		return this.processService.update(id, updateProcessDto);
 	}
 
 	@Delete(':id')
 	remove(@Param('id') id: string) {
-		return this.processService.remove(+id);
+		return this.processService.remove(id);
 	}
 }

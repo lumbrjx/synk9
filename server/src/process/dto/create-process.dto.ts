@@ -1,4 +1,4 @@
-import { IsArray, IsNumber, IsString, ValidateNested } from "class-validator";
+import { IsArray, IsNumber, IsString, IsUUID, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 
 class SensorDto {
@@ -7,7 +7,7 @@ class SensorDto {
 }
 
 class RuleDto {
-	@IsString()
+	@IsUUID()
 	sensor_id: string;
 
 	@IsNumber()
@@ -18,11 +18,12 @@ export class CreateProcessStepDto {
 	@IsString()
 	name: string;
 
-	@IsArray()
-	@ValidateNested({ each: true })
-	@Type(() => SensorDto)
-	sensors: SensorDto[];
+	@IsString()
+	description: string;
 
+	@IsString()
+	processId: string;
+	
 	@IsArray()
 	@ValidateNested({ each: true })
 	@Type(() => RuleDto)
@@ -37,5 +38,8 @@ export class CreateProcessDto {
 	description: string;
 
 	@IsString()
+	label: string;
+
+	@IsUUID()
 	agentId: string;
 }

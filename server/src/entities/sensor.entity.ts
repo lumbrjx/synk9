@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
 
 @Entity()
 export class Sensor {
@@ -7,6 +7,9 @@ export class Sensor {
 
 	@Column()
 	name: string;
+
+	@CreateDateColumn({ type: 'timestamp' })
+	createdAt: Date;
 
 	@Column({ nullable: true })
 	description: string;

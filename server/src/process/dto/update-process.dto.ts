@@ -1,4 +1,9 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { CreateProcessStepDto } from './create-process.dto';
+import { CreateProcessDto, CreateProcessStepDto } from './create-process.dto';
+import { IsBoolean } from 'class-validator';
 
-export class UpdateProcessDto extends PartialType(CreateProcessStepDto) { }
+export class UpdateProcessDto extends PartialType(CreateProcessDto) { }
+export class UpdateProcessStepDto extends PartialType(CreateProcessStepDto) {
+	@IsBoolean()
+	skip: boolean;
+}

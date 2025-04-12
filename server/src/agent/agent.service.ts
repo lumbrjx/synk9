@@ -27,15 +27,15 @@ export class AgentService {
 		return this.agentRepository.findOne({ where: { id } });
 	}
 
-	async update(updateAgentDto: UpdateAgentDto) {
-		const updatedAgent = await this.agentRepository.update({ id: updateAgentDto.id }, {
+	async update(id: string, updateAgentDto: UpdateAgentDto) {
+		const updatedAgent = await this.agentRepository.update({ id }, {
 			description: updateAgentDto.description,
 			locked: updateAgentDto.locked,
 			plcId: updateAgentDto.plcId,
 			name: updateAgentDto.name
 		})
-		if (updatedAgent.affected === 0) {
-			throw new Error(`Failed to update the agent with ID: ${updateAgentDto.id}`);
+		if (!updatedAgent.affected) {
+			throw new Error(`Failed to update the agent with ID: ${id}`);
 		}
 		return updatedAgent;
 	}

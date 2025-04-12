@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 import { Process } from './process.entity';
 
 export enum AgentState {
@@ -12,7 +12,7 @@ export class Agent {
 	@PrimaryGeneratedColumn("uuid")
 	id: string;
 
-	@Column()
+	@Column({ nullable: false })
 	name: string;
 
 	@Column({ nullable: true })
@@ -34,11 +34,14 @@ export class Agent {
 	@Column({ default: false })
 	locked: boolean;
 
-	@Column()
+	@Column({ nullable: false })
 	plcId: string;
 
 	@DeleteDateColumn()
 	deletedAt?: Date;
+
+	@CreateDateColumn({ type: 'timestamp' })
+	createdAt: Date;
 
 	@OneToMany(() => Process, process => process.agent)
 	processes: Process[];

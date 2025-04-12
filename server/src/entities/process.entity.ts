@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { ProcessStep } from './process-steps.entity';
 import { Agent } from './agent.entity';
 
@@ -13,10 +13,10 @@ export class Process {
 	@Column()
 	description: string;
 
-	@Column()
+	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
 
-	@Column("text", { array: true })
+	@Column("text", { array: true, nullable: true })
 	label: string[];
 
 	@OneToMany(() => ProcessStep, step => step.process, { cascade: true })

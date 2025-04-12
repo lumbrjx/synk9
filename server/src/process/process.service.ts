@@ -1,26 +1,48 @@
 import { Injectable } from '@nestjs/common';
 import { UpdateProcessDto } from './dto/update-process.dto';
-import { CreateProcessDto, CreateProcessStepDto } from './dto/create-process.dto';
+import { CreateProcessDto } from './dto/create-process.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Process } from 'src/entities';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class ProcessService {
-	create(createProcessDto: CreateProcessDto) {
-		return 'This action adds a new process';
+	constructor(
+		@InjectRepository(Process)
+		private processRepository: Repository<Process>,
+	) { }
+	async create(createProcessDto: CreateProcessDto) {
+		const process = this.processRepository.create({
+			name: createProcessDto.name,
+			description: createProcessDto.description,
+			agent: { id: createProcessDto.agentId }
+		});
+
+		return await this.processRepository.save(process);
 	}
 
 	findAll() {
-		return `This action returns all process`;
+		return this.processRepository.find();
 	}
 
-	findOne(id: number) {
-		return `This action returns a #${id} process`;
+	findOne(id: string) {
+		return this.processRepository.findOne({ where: { id } });
 	}
 
-	update(id: number, updateProcessDto: UpdateProcessDto) {
-		return `This action updates a #${id} process`;
+	async update(id: string, updateProcessDto: UpdateProcessDto) {
+		const updatedProcess = await this.processRepository.update({ id }, {
+			description: updateProcessDto.description,
+			label: [updateProcessDto.label as string],
+			agent: { id: updateProcessDto.agentId },
+			name: updateProcessDto.name
+		})
+		if (!updatedProcess.affected) {
+			throw new Error(`Failed to update the agent with ID: ${id}`);
+		}
+		return updatedProcess;
 	}
 
-	remove(id: number) {
-		return `This action removes a #${id} process`;
+	async remove(id: string) {
+		await this.processRepository.softDelete({ id })
 	}
 }
