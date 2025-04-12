@@ -8,19 +8,10 @@ pub struct WriteData {
     pub value: u16,
 }
 
-/// Modbus Data
 #[derive(Serialize, Deserialize)]
 pub struct ModbusData {
     pub time: String,
     pub aq1: u16,
-}
-pub trait PlcApi {
-    fn init(&mut self) -> Result<(), String>;
-    fn start_plc(&mut self) -> Result<(), String>;
-    fn stop_plc(&mut self) -> Result<(), String>;
-    fn restart_plc(&mut self) -> Result<(), String>;
-    fn write_to_plc(&mut self) -> Result<(), String>;
-    fn read_from_plc(&mut self) -> Result<(), String>;
 }
 
 pub async fn stop_plc(ctx: &mut Context) -> Result<(), Box<dyn std::error::Error>> {

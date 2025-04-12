@@ -1,130 +1,64 @@
-use futures::StreamExt;
-use serde::{Deserialize, Serialize};
+use futures::FutureExt;
+use rust_socketio::{asynchronous::Client, asynchronous::ClientBuilder, Payload};
+use serde_json::json;
+use std::error::Error as StdError;
 use tokio::sync::mpsc;
-use tokio_tungstenite::tungstenite::protocol::Message;
 
-use crate::{
-    agent::{ChEvent, SensorConfig},
-    plc_io::WriteData,
-};
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WsCmdEvent {
-    pub type_of_event: String,
-    pub data: WriteData,
-}
-#[derive(Serialize, Deserialize, Debug)]
-pub struct WsConfigEvent {
-    pub type_of_event: String,
-    pub data: SensorConfig,
-}
+use crate::helper::parse_message_to_event;
+use crate::ChEvent;
 
-pub async fn handle_websocket_messages(
-    mut ws_read: impl StreamExt<Item = Result<Message, tokio_tungstenite::tungstenite::Error>> + Unpin,
+pub async fn setup_socket_io(
+    url: &str,
     tx: mpsc::Sender<ChEvent>,
-) {
-    while let Some(message) = ws_read.next().await {
-        match message {
-            Ok(Message::Text(text)) => {
-                if let Ok(event) = serde_json::from_str::<WsCmdEvent>(&text) {
-                    match event.type_of_event.as_str() {
-                        "clean_up" => {
-                            if tx.send(ChEvent::CleanUp).await.is_err() {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
-                        "health_check" => {
-                            if tx.send(ChEvent::HealthCheck).await.is_err() {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
-                        "stop" => {
-                            if tx.send(ChEvent::Stop).await.is_err() {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
-                        "write" => {
-                            if tx
-                                .send(ChEvent::Write {
-                                    reg: event.data.register,
-                                    val: event.data.value,
-                                })
-                                .await
-                                .is_err()
-                            {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
-                        _ => println!("Unknown event: {}", event.type_of_event),
-                    }
-                }
-                if let Ok(event) = serde_json::from_str::<WsConfigEvent>(&text) {
-                    match event.type_of_event.as_str() {
-                        "pause_agent" => {
-                            if tx.send(ChEvent::PauseAgent).await.is_err() {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
-                        "edit_sensor" => {
-                            if tx
-                                .send(ChEvent::EditSensor {
-                                    id: event.data.id,
-                                    label: event.data.label,
-                                    start_register: event.data.start_register,
-                                    end_register: event.data.end_register,
-                                })
-                                .await
-                                .is_err()
-                            {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
-                        "add_sensor" => {
-                            if tx
-                                .send(ChEvent::AddSensor {
-                                    id: event.data.id,
-                                    label: event.data.label,
-                                    start_register: event.data.start_register,
-                                    end_register: event.data.end_register,
-                                })
-                                .await
-                                .is_err()
-                            {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
-                        "remove_sensor" => {
-                            if tx
-                                .send(ChEvent::RemoveSensor { id: event.data.id })
-                                .await
-                                .is_err()
-                            {
-                                eprintln!("Main loop dropped, stopping WebSocket listener.");
-                                break;
-                            }
-                        }
+) -> Result<Client, Box<dyn StdError>> {
+    let socket = ClientBuilder::new(url)
+        .namespace("/")
+        .on("test", move |payload: Payload, socket: Client| {
+            let tx = tx.clone();
 
-                        _ => println!("Unknown event: {}", event.type_of_event),
+            async move {
+                match payload {
+                    Payload::String(ref str) => {
+                        println!("Received message: {}", str);
+
+                        if let Payload::String(data) = payload {
+                            match parse_message_to_event(&data) {
+                                Ok(event) => {
+                                    if let Err(e) = tx.send(event).await {
+                                        eprintln!("Failed to send event to channel: {}", e);
+                                    }
+                                }
+                                Err(e) => eprintln!("Failed to parse message: {}", e),
+                            }
+                        }
                     }
-                } else {
-                    eprintln!("Failed to parse message as JSON: {}", text);
+                    Payload::Binary(bin_data) => {
+                        println!("Received binary data: {:?}", bin_data);
+                    }
+                }
+
+                // Send acknowledgment
+                if let Err(e) = socket.emit("test", json!({"status": "received"})).await {
+                    eprintln!("Failed to send acknowledgment: {}", e);
                 }
             }
-            Ok(Message::Close(_)) => {
-                println!("WebSocket connection closed by server.");
-                break;
+            .boxed()
+        })
+        .on("error", |err, _| {
+            async move {
+                eprintln!("Socket.IO error: {:?}", err);
             }
-            Err(e) => {
-                eprintln!("Error receiving message: {}", e);
-                break;
+            .boxed()
+        })
+        .on("disconnect", |_, _| {
+            async move {
+                println!("Disconnected from Socket.IO server");
             }
-            _ => {}
-        }
-    }
+            .boxed()
+        })
+        .connect()
+        .await?;
+
+    println!("Connected to Socket.IO server: {}", url);
+    Ok(socket)
 }
