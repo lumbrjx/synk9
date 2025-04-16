@@ -17,7 +17,7 @@ pub async fn monitor_plc_loop(agent: Arc<Mutex<Agent>>) -> Result<(), AppError> 
         // Get a snapshot of current sensors
         let sensors = {
             let agent_lock = agent.lock().await;
-            let state_lock = agent_lock.state.lock().await;
+            let state_lock = &agent_lock.state;
 
             if state_lock.paused_agent {
                 continue;
@@ -25,6 +25,7 @@ pub async fn monitor_plc_loop(agent: Arc<Mutex<Agent>>) -> Result<(), AppError> 
 
             state_lock.registered_sensors.clone()
         };
+        println!("{:}", sensors.len());
 
         if !sensors.is_empty() {
             println!("Processing sensors: {:?}", sensors);
@@ -69,10 +70,12 @@ async fn process_single_sensor(
     let modbus_data = plc_io::ModbusData {
         time: timestamp,
         value: sensor_value,
-        key: sensor.label
+        key: sensor.label,
     };
 
-    agent_guard.send_json("monitoring_streamline", &modbus_data).await?;
+    agent_guard
+        .send_json("monitoring_streamline", &modbus_data)
+        .await?;
 
     Ok(())
 }

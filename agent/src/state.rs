@@ -3,18 +3,18 @@ use tokio::sync::Mutex;
 
 use crate::config::SensorConfig;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SharedState {
     pub registered_sensors: Vec<SensorConfig>,
     pub paused_agent: bool,
 }
 
 impl SharedState {
-    pub fn new() -> Arc<Mutex<Self>> {
-        Arc::new(Mutex::new(Self {
+    pub fn new() -> Self {
+        Self {
             registered_sensors: Vec::new(),
             paused_agent: false,
-        }))
+        }
     }
 
     pub fn add_sensor(&mut self, sensor: SensorConfig) {

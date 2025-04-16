@@ -1,7 +1,7 @@
-use rust_socketio::asynchronous::Client;
 use serde::Serialize;
-use serde_json::json;
+use serde_json::{json, Value};
 use std::sync::Arc;
+use tokio::sync::mpsc::Receiver;
 use tokio::sync::Mutex;
 use tokio::time::sleep;
 
@@ -10,48 +10,55 @@ use crate::helper::AppError;
 use crate::monitoring::monitor_plc_loop;
 use crate::plc_io;
 use crate::state::SharedState;
+use crate::ws::SocketServer;
 use crate::ChEvent;
 
 pub struct Agent {
     pub slave_ctx: Arc<Mutex<tokio_modbus::client::Context>>,
-    pub event: ChEvent,
-    pub socket_io: Client,
-    pub state: Arc<Mutex<SharedState>>,
+    pub socket_client: SocketServer,
+    pub event_reciever: Receiver<ChEvent>,
+    pub state: SharedState,
 }
 
 impl Agent {
     pub fn new(
         slave_ctx: Arc<Mutex<tokio_modbus::client::Context>>,
-        event: ChEvent,
-        socket_io: Client,
-        state: Arc<Mutex<SharedState>>,
+        socket_client: SocketServer,
+        event_reciever: Receiver<ChEvent>,
     ) -> Self {
         Self {
             slave_ctx,
-            event,
-            socket_io,
-            state,
+            socket_client,
+            event_reciever,
+            state: SharedState::new(),
         }
     }
+    pub async fn run(&mut self) -> Result<(), AppError> {
+        self.handle_master_event(ChEvent::Wait).await;
+        while let Some(event) = self.event_reciever.recv().await {
+            if let Err(err) = self.handle_master_event(event).await {
+                println!("{}", err)
+            }
+        }
+        Err(AppError::InternalError("Some Error".to_string()))
+    }
 
-    pub async fn handle_master_event(&mut self) -> Result<(), AppError> {
-        match &self.event {
+    pub async fn handle_master_event(&mut self, event: ChEvent) -> Result<(), AppError> {
+        match event {
             ChEvent::CleanUp => {
-                let mut state = self.state.lock().await;
-                if state.paused_agent {
+                if self.state.paused_agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
-                state.cleanup_sensors();
+                self.state.cleanup_sensors();
             }
             ChEvent::HealthCheck => {
-                let state = self.state.lock().await;
-                self.send_json("health_check", &state.registered_sensors)
+                self.send_json("health_check", &self.state.registered_sensors)
                     .await?;
             }
             ChEvent::Stop => {
                 println!("Received STOP event -> Stopping PLC.");
-                if self.state.lock().await.paused_agent {
+                if self.state.paused_agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
@@ -66,13 +73,13 @@ impl Agent {
                     "Received WRITE event -> Writing {} to register {}.",
                     val, reg
                 );
-                if self.state.lock().await.paused_agent {
+                if self.state.paused_agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
 
                 let mut slave_ctx = self.slave_ctx.lock().await;
-                plc_io::write_to_plc(&mut slave_ctx, *reg, *val)
+                plc_io::write_to_plc(&mut slave_ctx, reg, val)
                     .await
                     .map_err(|e| AppError::PlcError(e.to_string()))?;
             }
@@ -87,24 +94,22 @@ impl Agent {
                 let new_sensor = SensorConfig {
                     id: id.to_string(),
                     label: label.to_string(),
-                    start_register: *start_register,
-                    end_register: *end_register,
+                    start_register ,
+                    end_register ,
                 };
 
-                let mut state = self.state.lock().await;
-                if state.paused_agent {
+                if self.state.paused_agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
-                state.add_sensor(new_sensor);
+                self.state.add_sensor(new_sensor);
             }
             ChEvent::RemoveSensor { id } => {
-                let mut state = self.state.lock().await;
-                if state.paused_agent {
+                if self.state.paused_agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
-                state.remove_sensor(id);
+                self.state.remove_sensor(&id);
             }
             ChEvent::EditSensor {
                 id,
@@ -112,17 +117,15 @@ impl Agent {
                 start_register,
                 end_register,
             } => {
-                let mut state = self.state.lock().await;
-                if state.paused_agent {
+                if self.state.paused_agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
-                state.edit_sensor(id, label.clone(), *start_register, *end_register);
+                self.state.edit_sensor(&id, label.clone(), start_register, end_register);
             }
             ChEvent::PauseAgent => {
-                let mut state = self.state.lock().await;
-                state.paused_agent = !state.paused_agent;
-                let status = if state.paused_agent {
+                self.state.paused_agent = !self.state.paused_agent;
+                let status = if self.state.paused_agent {
                     "paused"
                 } else {
                     "resumed"
@@ -136,19 +139,15 @@ impl Agent {
     }
 
     async fn send_message(&self, event: &str, message: &str) -> Result<(), AppError> {
-        self.socket_io
-            .emit(event, json!({ "message": message }))
+        self.socket_client
+            .send_message(event, json!({ "message": message }))
             .await
-            .map_err(|e| AppError::SocketIoError(e.to_string()))?;
-        Ok(())
     }
 
     pub async fn send_json<T: Serialize>(&self, event: &str, data: &T) -> Result<(), AppError> {
-        self.socket_io
-            .emit(event, serde_json::to_value(data).unwrap())
-            .await
-            .map_err(|e| AppError::SocketIoError(e.to_string()))?;
-        Ok(())
+        let value =
+            serde_json::to_value(data).map_err(|err| AppError::ValidationError(err.to_string()))?;
+        self.socket_client.send_message(event, value).await
     }
 
     pub async fn start_monitoring(agent: Arc<Mutex<Self>>) -> Result<(), AppError> {
