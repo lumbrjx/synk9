@@ -94,8 +94,8 @@ impl Agent {
                 let new_sensor = SensorConfig {
                     id: id.to_string(),
                     label: label.to_string(),
-                    start_register ,
-                    end_register ,
+                    start_register,
+                    end_register,
                 };
 
                 if self.state.paused_agent {
@@ -121,7 +121,8 @@ impl Agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
-                self.state.edit_sensor(&id, label.clone(), start_register, end_register);
+                self.state
+                    .edit_sensor(&id, label.clone(), start_register, end_register);
             }
             ChEvent::PauseAgent => {
                 self.state.paused_agent = !self.state.paused_agent;

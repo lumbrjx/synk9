@@ -41,6 +41,7 @@ async fn process_all_sensors(
     for sensor in sensors {
         let agent_clone = agent.clone();
 
+        println!("IM THE SENSOR ID : {}", sensor.clone().id);
         // Process each sensor in its own task
         tokio::spawn(async move {
             if let Err(err) = process_single_sensor(agent_clone, sensor.clone()).await {
@@ -65,7 +66,7 @@ async fn process_single_sensor(
             .map_err(|e| AppError::PlcError(e.to_string()))?;
 
     let timestamp = Local::now().format("%y/%m/%d %H:%M:%S").to_string();
-    println!("{} - Sensor {}: {}", timestamp, sensor.id, sensor_value);
+    println!("{} - changeasdfa Sensor {}: {}", timestamp, sensor.id, sensor_value);
 
     let modbus_data = plc_io::ModbusData {
         time: timestamp,
