@@ -32,7 +32,6 @@ export class ProcessService {
 	async update(id: string, updateProcessDto: UpdateProcessDto) {
 		const updatedProcess = await this.processRepository.update({ id }, {
 			description: updateProcessDto.description,
-			label: [updateProcessDto.label as string],
 			agent: { id: updateProcessDto.agentId },
 			name: updateProcessDto.name
 		})

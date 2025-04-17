@@ -49,8 +49,8 @@ export class AgentService {
 
 	async remove(id: string) {
 		const deleted = await this.agentRepository.softDelete({ id })
-		if(deleted.affected){
-		 this.eventBus.emit("agent:deleted", { id });
+		if (deleted.affected) {
+			this.eventBus.emit("agent:deleted", { id });
 		}
 	}
 }

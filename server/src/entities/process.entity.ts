@@ -15,10 +15,7 @@ export class Process {
 
 	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
-
-	@Column("text", { array: true, nullable: true })
-	label: string[];
-
+	
 	@OneToMany(() => ProcessStep, step => step.process, { cascade: true })
 	steps: ProcessStep[];
 
