@@ -10,6 +10,7 @@ const navItems = [
 	{ name: 'Jobs', route: '/jobs', icon: <FaTasks />, key: 'jobs' },
 	{ name: 'Workers', route: '/workers', icon: <FaUsers />, key: 'workers' },
 	{ name: 'Processes', route: '/processes', icon: <FaUsers />, key: 'processes' },
+	{ name: 'Sensors', route: '/sensors', icon: <FaUsers />, key: 'sensors' },
 ];
 
 const bottomItems = [
@@ -65,7 +66,7 @@ const Sidebar: React.FC = () => {
 
 	return (
 		<div
-			className={`h-screen bg-[#1b1b1d] text-md text-[#808191] flex flex-col justify-between items-center transition-all duration-300 ${isCollapsed ? 'w-16' : 'w-1/6'
+			className={`h-screen bg-[#1b1b1d] text-md text-[#808191] flex flex-col justify-between items-center transition-all duration-100 ${isCollapsed ? 'w-16' : 'w-1/6'
 				}`}
 		>
 			<button className="md:hidden p-2" onClick={toggleSidebar}>

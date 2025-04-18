@@ -5,20 +5,24 @@ import ProtectedRoute from "./components/protected-route";
 import Dashboard from "./components/pages/dashboard";
 import Agents from "./components/pages/agents";
 import Processes from "./components/pages/processes";
+import Details from "./components/pages/details";
+import Sensors from "./components/pages/sensors";
 
 function App() {
 
 	return (
-		<main className="flex font-lexend bg-primary text-xl">
+		<div className="flex font-lexend bg-primary text-xl w-screen">
 			<Sidebar />
-			<div className="text-secondary ps-10 py-8">
-			<Routes>
-				<Route path="/" element={<ProtectedRoute allowedRoles={[]}><Dashboard /></ProtectedRoute>} />
-				<Route path="/agents" element={<ProtectedRoute allowedRoles={[]}><Agents/></ProtectedRoute>} />
-				<Route path="/processes" element={<ProtectedRoute allowedRoles={[]}><Processes/></ProtectedRoute>} />
-			</Routes>
+			<div className="text-secondary w-screen">
+				<Routes>
+					<Route path="/" element={<ProtectedRoute allowedRoles={[]}><Dashboard /></ProtectedRoute>} />
+					<Route path="/agents" element={<ProtectedRoute allowedRoles={[]}><Agents /></ProtectedRoute>} />
+					<Route path="/processes" element={<ProtectedRoute allowedRoles={[]}><Processes /></ProtectedRoute>} />
+					<Route path="/details/:id" element={<ProtectedRoute allowedRoles={[]}><Details /></ProtectedRoute>} />
+					<Route path="/sensors" element={<ProtectedRoute allowedRoles={[]}><Sensors/></ProtectedRoute>} />
+				</Routes>
 			</div>
-		</main>
+		</div>
 	);
 }
 

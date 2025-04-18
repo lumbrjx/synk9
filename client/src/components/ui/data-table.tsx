@@ -5,6 +5,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table"
 
+import { useNavigate } from 'react-router-dom';
 import {
 	Table,
 	TableBody,
@@ -23,6 +24,8 @@ export function DataTable<TData, TValue>({
 	columns,
 	data,
 }: DataTableProps<TData, TValue>) {
+
+	const navigate = useNavigate();
 	const table = useReactTable({
 		data,
 		columns,
@@ -58,7 +61,9 @@ export function DataTable<TData, TValue>({
 								data-state={row.getIsSelected() && "selected"}
 							>
 								{row.getVisibleCells().map((cell) => (
-									<TableCell key={cell.id}>
+									<TableCell
+										onClick={() => navigate(`/details/${(cell.row.original as any).id}`)}
+										key={cell.id}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</TableCell>
 								))}
@@ -73,7 +78,7 @@ export function DataTable<TData, TValue>({
 					)}
 				</TableBody>
 			</Table>
-		</div>
+		</div >
 	)
 }
 

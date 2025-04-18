@@ -103,10 +103,10 @@ export default function Agents() {
 
 	return (
 		<div>
-			<h1 className="text-3xl font-bold">Agents</h1>
+			<h1 className="text-3xl py-8 ps-12 font-bold">Agents</h1>
 			<div className="flex flex-col">
 
-				<div className="flex justify-end mt-10">
+				<div className="flex w-full justify-end mt-10 pe-12">
 					<CustomDrawer
 						formSchema={formSchema}
 						formFields={fields}

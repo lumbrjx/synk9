@@ -11,17 +11,19 @@ import { useEffect } from "react";
 const formSchema = z.object({
 	name: z.string().min(2),
 	description: z.string().min(2),
-	agentId: z.string().min(2),
+	start_register: z.string().min(2),
+	end_register: z.string().min(2),
 })
 
 const fields = [
-	{ name: "name", label: "Label", placeholder: "my-process" },
-	{ name: "description", label: "Description", placeholder: "very awesome process" },
-	{ name: "agentId", label: "Pick an Agent", placeholder: "agent" },
+	{ name: "name", label: "Label", placeholder: "my-sensor" },
+	{ name: "description", label: "Description", placeholder: "very awesome sensor" },
+	{ name: "start_register", label: "Start Reg", placeholder: "512" },
+	{ name: "end_register", label: "End Reg", placeholder: "42" },
 ]
 const defaultValues = { name: "", description: "", agentId: '' };
 
-export default function Processes() {
+export default function Sensors() {
 	type Payment = {
 		id: string
 		plcId: number
@@ -51,11 +53,11 @@ export default function Processes() {
 		isFetching,
 		status
 	} = useAxiosQuery({
-		queryKey: ['processes'],
+		queryKey: ['sensors'],
 		queryFn: async () => {
 			try {
 				console.log("Fetching agents...");
-				const response = await query('/process');
+				const response = await query('/sensor');
 				console.log("Fetch response:", response);
 				return response;
 			} catch (e) {
@@ -70,7 +72,7 @@ export default function Processes() {
 	});
 	const createMutation = useAxiosMutation({
 		mutationFn: (data: z.infer<typeof formSchema>) =>
-			create("/process", data),
+			create("/sensor", data),
 		options: {
 			onSuccess: () => {
 				console.log("Agent created!")
