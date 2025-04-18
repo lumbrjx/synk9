@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/table"
 
 interface DataTableProps<TData, TValue> {
+	route: string
 	columns: ColumnDef<TData, TValue>[]
 	data: TData[]
 }
 
 export function DataTable<TData, TValue>({
+	route,
 	columns,
 	data,
 }: DataTableProps<TData, TValue>) {
@@ -62,7 +64,7 @@ export function DataTable<TData, TValue>({
 							>
 								{row.getVisibleCells().map((cell) => (
 									<TableCell
-										onClick={() => navigate(`/details/${(cell.row.original as any).id}`)}
+										onClick={() => navigate(`/${route}/${(cell.row.original as any).id}`)}
 										key={cell.id}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
 									</TableCell>

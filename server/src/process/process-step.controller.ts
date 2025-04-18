@@ -11,7 +11,10 @@ export class ProcessStepController {
 	create(@Body() createProcessDto: CreateProcessStepDto) {
 		return this.processStepService.create(createProcessDto);
 	}
-
+	@Get(":id")
+	findByProcess(@Param('id') id:string) {
+		return this.processStepService.findByProcess(id);
+	}
 	@Get()
 	findAll() {
 		return this.processStepService.findAll();

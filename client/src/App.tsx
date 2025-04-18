@@ -7,6 +7,8 @@ import Agents from "./components/pages/agents";
 import Processes from "./components/pages/processes";
 import Details from "./components/pages/details";
 import Sensors from "./components/pages/sensors";
+import AgentDetails from "./components/pages/others-details";
+import SensorDetails from "./components/pages/sensor-details";
 
 function App() {
 
@@ -19,6 +21,8 @@ function App() {
 					<Route path="/agents" element={<ProtectedRoute allowedRoles={[]}><Agents /></ProtectedRoute>} />
 					<Route path="/processes" element={<ProtectedRoute allowedRoles={[]}><Processes /></ProtectedRoute>} />
 					<Route path="/details/:id" element={<ProtectedRoute allowedRoles={[]}><Details /></ProtectedRoute>} />
+					<Route path="/agent/details/:id" element={<ProtectedRoute allowedRoles={[]}><AgentDetails/></ProtectedRoute>} />
+					<Route path="/sensor/details/:id" element={<ProtectedRoute allowedRoles={[]}><SensorDetails/></ProtectedRoute>} />
 					<Route path="/sensors" element={<ProtectedRoute allowedRoles={[]}><Sensors/></ProtectedRoute>} />
 				</Routes>
 			</div>

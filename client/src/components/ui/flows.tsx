@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import ReactFlow, { Handle, Position } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Check, X, Play, Clock, AlertCircle } from 'lucide-react';
+import { useMemo } from 'react';
+import { getLayoutedElements } from './dagre';
 
 const StatusNode = ({ data, isConnectable }: any) => {
 	const getStatusIcon = () => {
@@ -63,92 +64,70 @@ const nodeTypes = {
 	status: StatusNode,
 };
 
-export default function FlowCanvas() {
-	// Define nodes in GitHub pipeline style with status
-	const [nodes] = useState([
-		{
-			id: '1',
+export default function FlowCanvas({ steps, setStepSideView }: any) {
+	const initialNodes = useMemo(() => {
+		return steps.map((step: any) => ({
+			id: step.id,
 			data: {
-				label: 'Build',
-				status: 'pending',
-				duration: '2m 34s'
+				label: step.name,
+				status: 'pending', // Or use real status if you have it
+				duration: 0, // Same
 			},
-			position: { x: 50, y: 50 },
-			type: 'status'
-		},
-		{
-			id: '2',
-			data: {
-				label: 'Test',
-				status: 'failed',
-				duration: '1m 12s'
-			},
-			position: { x: 250, y: 50 },
-			type: 'status'
-		},
-		{
-			id: '3',
-			data: {
-				label: 'Lint',
-				status: 'success',
-				duration: '42s'
-			},
-			position: { x: 450, y: 50 },
-			type: 'status'
-		},
-		{
-			id: '4',
-			data: {
-				label: 'Deploy',
-				status: 'running',
-				duration: '1m 3s'
-			},
-			position: { x: 650, y: 50 },
-			type: 'status'
-		},
-	]);
+			position: { x: 0, y: 0 },
+			type: 'status',
+		}));
+	}, [steps]);
 
-	const [edges] = useState([
-		{
-			id: 'e1-2',
-			source: '1',
-			target: '2',
-			style: { stroke: '#d1d5db', strokeWidth: 2 },
-			animated: false,
-		},
-		{
-			id: 'e2-3',
-			source: '2',
-			target: '3',
-			style: { stroke: '#d1d5db', strokeWidth: 2 },
-			animated: false,
-		},
-		{
-			id: 'e3-4',
-			source: '3',
-			target: '4',
-			style: { stroke: '#d1d5db', strokeWidth: 2 },
-			animated: true,
-		},
-	]);
+	const initialEdges = useMemo(() => {
+		const edges = [];
+
+		for (const step of steps) {
+			if (step.from && step.from.id) {
+				edges.push({
+					id: `e${step.from.id}-${step.id}`,
+					source: step.from.id,
+					target: step.id,
+					style: { stroke: '#d1d5db', strokeWidth: 2 },
+
+					animated: true,
+				});
+			}
+
+			if (step.to && step.to.id) {
+				edges.push({
+					id: `e${step.id}-${step.to.id}`,
+					source: step.id,
+					target: step.to.id,
+					style: { stroke: '#d1d5db', strokeWidth: 2 },
+				});
+			}
+		}
+
+		return edges;
+	}, [steps]);
+
+
+	const { nodes, edges } = useMemo(
+		() => getLayoutedElements(initialNodes, initialEdges),
+		[initialNodes, initialEdges]
+	);
 
 	return (
-		<div className="w-full h-120 border border-gray-200 rounded-md">
-			<div className="p-3 border-b border-gray-200">
-				<h3 className="text-sm font-medium text-purple-100">Workflow: main.yml</h3>
+		<div className="w-full h-120 ">
+			<div className="p-3 border-b border-gray-100">
+				<h3 className="text-sm font-medium text-purple-100">Workflow</h3>
 			</div>
 			<ReactFlow
 				nodes={nodes}
 				edges={edges}
 				nodeTypes={nodeTypes}
 				fitView
-				minZoom={0.5}
-				maxZoom={2}
-				nodesDraggable={false}
+				nodesDraggable={true}
 				nodesConnectable={false}
-				elementsSelectable={false}
-			>
-			</ReactFlow>
+				onNodeClick={(_event, node) => setStepSideView(node.data)} 
+				elementsSelectable={true}
+			/>
 		</div>
 	);
 }
+

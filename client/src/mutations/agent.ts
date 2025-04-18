@@ -10,7 +10,7 @@ export async function create<T>(route: string, data: T) {
 	return response.data
 }
 export async function update<T>(route: string, data: T) {
-	const response = await axios.post(baseUrl + route, data, {
+	const response = await axios.patch(baseUrl + route, data, {
 		headers: {
 			"Content-Type": "application/json",
 		},

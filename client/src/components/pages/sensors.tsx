@@ -16,10 +16,10 @@ const formSchema = z.object({
 })
 
 const fields = [
-	{ name: "name", label: "Label", placeholder: "my-sensor" },
-	{ name: "description", label: "Description", placeholder: "very awesome sensor" },
-	{ name: "start_register", label: "Start Reg", placeholder: "512" },
-	{ name: "end_register", label: "End Reg", placeholder: "42" },
+	{ name: "name", label: "Label", placeholder: "my-sensor", type: "input" as const },
+	{ name: "description", label: "Description", placeholder: "very awesome sensor", type: "input" as const },
+	{ name: "start_register", label: "Start Reg", placeholder: "512", type: "input" as const },
+	{ name: "end_register", label: "End Reg", placeholder: "42", type: "input" as const },
 ]
 const defaultValues = { name: "", description: "", agentId: '' };
 
@@ -123,6 +123,7 @@ export default function Sensors() {
 						</div>
 					) : (
 						<DataTable
+							route="sensor/details"
 							columns={columns}
 							data={agents || []}
 						/>

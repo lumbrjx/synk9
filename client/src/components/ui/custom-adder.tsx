@@ -1,0 +1,132 @@
+"use client"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue
+} from "@/components/ui/select"
+import { PlusCircle, Trash2 } from "lucide-react"
+
+// Define the Rule type
+export type Rule = {
+	sensor_id: string
+	final_value: number
+}
+
+// Define type for sensor options
+export type SensorOption = {
+	value: string
+	label: string
+}
+
+type RulesInputProps = {
+	value: Rule[]
+	onChange: (rules: Rule[]) => void
+	sensorOptions: SensorOption[]  // Available sensors for selection
+	className?: string
+}
+
+export const RulesInput = ({
+	value = [],
+	onChange,
+	sensorOptions = [],
+	className
+}: RulesInputProps) => {
+	// Add a new empty rule
+	const addRule = () => {
+		const newRules = [...value, { sensor_id: "", final_value: 0 }]
+		onChange(newRules)
+	}
+
+	// Remove a rule at specific index
+	const removeRule = (index: number) => {
+		const newRules = [...value]
+		newRules.splice(index, 1)
+		onChange(newRules)
+	}
+
+	// Update a rule's sensorId at specific index
+	const updateSensorId = (index: number, newSensorId: string) => {
+		const newRules = [...value]
+		newRules[index] = { ...newRules[index], sensor_id: newSensorId }
+		onChange(newRules)
+	}
+
+	// Update a rule's rule value at specific index
+	const updateRuleValue = (index: number, newRule: number) => {
+		const newRules = [...value]
+		newRules[index] = { ...newRules[index], final_value: newRule }
+		onChange(newRules)
+	}
+
+	return (
+		<div className={`space-y-3 ${className}`}>
+			{/* Container with fixed height and overflow handling */}
+			<div className="border border-purple-100/20 rounded-md ">
+				{/* This is the scrollable container */}
+				<div className="max-h-40 overflow-y-auto p-2">
+					{value.length > 0 ? (
+						<div className="space-y-2">
+							{value.map((rule, index) => (
+								<div key={index} className="flex items-center gap-2">
+									<div className="flex-1 grid grid-cols-2 gap-2 min-w-0">
+										{/* Select dropdown for sensorId */}
+										<Select
+											value={rule.sensor_id}
+											onValueChange={(newValue) => updateSensorId(index, newValue)}
+										>
+											<SelectTrigger className="text-purple-100 w-full truncate">
+												<SelectValue placeholder="Select sensor" />
+											</SelectTrigger>
+											<SelectContent>
+												{sensorOptions.map((option) => (
+													<SelectItem key={option.value} value={option.value}>
+														{option.label}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+
+										{/* Input for rule value */}
+										<Input
+											value={rule.final_value}
+											onChange={(e) => updateRuleValue(index, Number(e.target.value))}
+											placeholder="Final Value"
+											className="text-purple-100"
+										/>
+									</div>
+									<Button
+										type="button"
+										variant="ghost"
+										size="icon"
+										onClick={() => removeRule(index)}
+										className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100"
+									>
+										<Trash2 size={16} />
+									</Button>
+								</div>
+							))}
+						</div>
+					) : (
+						<div className="text-sm text-gray-400 italic py-2">No rules added yet</div>
+					)}
+				</div>
+			</div>
+
+			{/* Add new rule button */}
+			<Button
+				type="button"
+				variant="outline"
+				size="sm"
+				onClick={addRule}
+				className="flex items-center gap-1 border-dashed border-purple-200 text-purple-400 hover:bg-purple-100 hover:text-purple-800"
+			>
+				<PlusCircle size={16} />
+				<span>Add Rule</span>
+			</Button>
+		</div>
+	)
+}

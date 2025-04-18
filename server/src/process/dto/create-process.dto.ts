@@ -1,4 +1,4 @@
-import { IsArray, IsNumber, IsString, IsUUID, ValidateNested } from "class-validator";
+import { IsArray, IsNumber, IsOptional, IsString, IsUUID, ValidateNested } from "class-validator";
 import { Type } from "class-transformer";
 
 class SensorDto {
@@ -23,7 +23,16 @@ export class CreateProcessStepDto {
 
 	@IsString()
 	processId: string;
-	
+
+
+	@IsOptional()  // Allow 'from' to be undefined or null
+	@IsString()
+	from?: string | null;
+
+	@IsOptional()  // Allow 'to' to be undefined or null
+	@IsString()
+	to?: string | null;
+
 	@IsArray()
 	@ValidateNested({ each: true })
 	@Type(() => RuleDto)

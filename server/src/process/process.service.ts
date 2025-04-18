@@ -20,7 +20,7 @@ export class ProcessService {
 
 		return await this.processRepository.save(process);
 	}
-
+	
 	findAll() {
 		return this.processRepository.find();
 	}

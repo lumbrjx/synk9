@@ -15,9 +15,9 @@ const formSchema = z.object({
 })
 
 const fields = [
-	{ name: "name", label: "Label", placeholder: "my-process" },
-	{ name: "description", label: "Description", placeholder: "very awesome process" },
-	{ name: "agentId", label: "Pick an Agent", placeholder: "agent" },
+	{ name: "name", label: "Label", placeholder: "my-process", type: "input" as const },
+	{ name: "description", label: "Description", placeholder: "very awesome process", type: "input" as const },
+	{ name: "agentId", label: "Pick an Agent", placeholder: "agent", type: "input" as const },
 ]
 const defaultValues = { name: "", description: "", agentId: '' };
 
@@ -121,6 +121,7 @@ export default function Processes() {
 						</div>
 					) : (
 						<DataTable
+							route="details"
 							columns={columns}
 							data={agents || []}
 						/>

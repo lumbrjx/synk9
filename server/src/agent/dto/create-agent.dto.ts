@@ -1,4 +1,4 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsString } from "class-validator";
 
 export class CreateAgentDto {
 	@IsString()
@@ -6,13 +6,7 @@ export class CreateAgentDto {
 
 	@IsString()
 	description: string;
-
-	@IsNumber()
-	start_register: number;
-
-	@IsNumber()
-	end_register: number;
-
+	
 	@IsString()
 	plcId: string;
 

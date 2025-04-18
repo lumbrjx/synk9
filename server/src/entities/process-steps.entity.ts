@@ -19,6 +19,11 @@ export class ProcessStep {
 	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
 
+	@ManyToOne(() => ProcessStep, { onDelete: 'CASCADE', nullable: true })
+	from: ProcessStep;
+
+	@ManyToOne(() => ProcessStep, { onDelete: 'CASCADE', nullable: true })
+	to: ProcessStep;
 
 	@ManyToOne(() => Process, process => process.steps, { onDelete: 'CASCADE' })
 	process: Process;

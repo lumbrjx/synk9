@@ -16,10 +16,10 @@ const formSchema = z.object({
 })
 
 const fields = [
-	{ name: "name", label: "Label", placeholder: "my-agent" },
-	{ name: "description", label: "Description", placeholder: "very awesome agent" },
-	{ name: "plcId", label: "PLC Id", placeholder: "plc7x12ll" },
-	{ name: "fingerprint", label: "fingerprint", placeholder: "aASDV34ETWHvaxz" },
+	{ name: "name", label: "Label", placeholder: "my-agent", type: "input" as const },
+	{ name: "description", label: "Description", placeholder: "very awesome agent", type: "input" as const},
+	{ name: "plcId", label: "PLC Id", placeholder: "plc7x12ll", type: "input" as const},
+	{ name: "fingerprint", label: "fingerprint", placeholder: "aASDV34ETWHvaxz", type: "input" as const },
 ]
 const defaultValues = { name: "", description: "", plcId: '', fingerprint: "" };
 
@@ -126,6 +126,7 @@ export default function Agents() {
 						</div>
 					) : (
 						<DataTable
+							route="agent/details"
 							columns={columns}
 							data={agents || []}
 						/>
