@@ -9,6 +9,14 @@ export async function create<T>(route: string, data: T) {
 	})
 	return response.data
 }
+export async function remove(route: string) {
+	const response = await axios.delete(baseUrl + route, {
+		headers: {
+			"Content-Type": "application/json",
+		},
+	})
+	return response.data
+}
 export async function update<T>(route: string, data: T) {
 	const response = await axios.patch(baseUrl + route, data, {
 		headers: {

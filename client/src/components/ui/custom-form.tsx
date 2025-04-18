@@ -47,6 +47,7 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
 		resolver: zodResolver(formSchema),
 		defaultValues: defaultValues
 	})
+
 	const { reset, } = form;
 	useEffect(() => {
 		reset(defaultValues);

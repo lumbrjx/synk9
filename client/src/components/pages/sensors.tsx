@@ -7,6 +7,7 @@ import { create } from "@/mutations/agent";
 import { useAxiosQuery } from "@/hooks/get";
 import { query } from "@/queries/agent";
 import { useEffect } from "react";
+import { toast } from "sonner";
 
 const formSchema = z.object({
 	name: z.string().min(2),
@@ -75,9 +76,12 @@ export default function Sensors() {
 			create("/sensor", data),
 		options: {
 			onSuccess: () => {
-				console.log("Agent created!")
+				toast.success("Sensor created successfully!");
 			},
-			onError: (e) => console.log("err", e),
+			onError: (e) => {
+				console.error("Create error", e);
+				toast.error("Failed to create sensor.");
+			}
 		},
 	})
 

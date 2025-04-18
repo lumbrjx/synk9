@@ -1,0 +1,7 @@
+{
+  "files": [],
+  "paths": {
+      "@/*": ["./src/renderer/*"]
+    },
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
+}

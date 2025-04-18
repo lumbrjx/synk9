@@ -18,7 +18,7 @@ import { z } from "zod"
 type FieldConfig = {
 	name: string
 	label: string
-	type: 'input' | 'select' | 'checkbox' | "rules"
+	type: 'input' | 'select' | 'checkbox' | "rules" | "input-number"
 	placeholder?: string
 	description?: string
 	options?: { value: string; label: string }[]

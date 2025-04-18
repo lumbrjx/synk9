@@ -1,5 +1,4 @@
 import { useParams } from 'react-router-dom';
-import { Button } from '../ui/button';
 import { useAxiosMutation } from "@/hooks/mutate";
 import { z } from 'zod';
 import { remove, update } from '@/mutations/agent';
@@ -7,37 +6,51 @@ import { useAxiosQuery } from '@/hooks/get';
 import { query } from '@/queries/agent';
 import { useEffect, useState } from 'react';
 import { CustomForm } from '../ui/custom-form';
+import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
 const formSchema = z.object({
 	name: z.string().min(2),
 	description: z.string().min(2),
-	start_register: z.number().nullish(),
-	end_register: z.number().nullish()
+	plcId: z.string().min(2),
+	locked: z.boolean().default(false),
 });
 
 
-export default function SensorDetails() {
+export default function AgentDetails() {
 	const { id } = useParams();
-
-	const createMutation = useAxiosMutation({
-		mutationFn: (data: z.infer<typeof formSchema>) =>
-			update("/sensor/" + id, data),
+	const deleteMutation = useAxiosMutation({
+		mutationFn: () =>
+			remove("/agent/" + id),
 		options: {
 			onSuccess: () => {
-				toast.success("Sensor updated successfully!");
+				toast.success("Agent deleted successfully!");
 			},
 			onError: (e) => {
 				console.error("Create error", e);
-				toast.error("Failed to update sensor.");
+				toast.error("Failed to delete agent.");
 			}
 		},
 	})
+	const createMutation = useAxiosMutation({
+		mutationFn: (data: z.infer<typeof formSchema>) =>
+			update("/agent/" + id, data),
+		options: {
+			onSuccess: () => {
+				toast.success("Agent updated successfully!");
+			},
+			onError: (e) => {
+				console.error("Create error", e);
+				toast.error("Failed to create process step.");
+			}
+		},
+	})
+
 	const [defaultVal, setDefaultVal] = useState({
 		name: "",
 		description: "",
-		start_register: 0,
-		end_register: 0
+		plcId: "",
+		locked: false
 	});
 
 	const {
@@ -48,11 +61,11 @@ export default function SensorDetails() {
 		isFetching,
 		status
 	} = useAxiosQuery({
-		queryKey: ['oneSensor'],
+		queryKey: ['oneAgent'],
 		queryFn: async () => {
 			try {
 				console.log("Fetching sensors...");
-				const response = await query('/sensor/' + id);
+				const response = await query('/agent/' + id);
 				console.log("im sensor", sensors)
 				return response;
 			} catch (e) {
@@ -65,20 +78,6 @@ export default function SensorDetails() {
 			retry: 10,
 		}
 	});
-	const deleteMutation = useAxiosMutation({
-		mutationFn: () =>
-			remove("/sensor/" + id),
-		options: {
-			onSuccess: () => {
-				toast.success("Sensor deleted successfully!");
-			},
-			onError: (e) => {
-				console.error("Create error", e);
-				toast.error("Failed to delete sensor.");
-			}
-		},
-	})
-
 	useEffect(() => {
 		console.log("Query status changed:", status);
 		console.log("isLoading:", isLoading);
@@ -89,8 +88,8 @@ export default function SensorDetails() {
 			setDefaultVal({
 				name: sensors.name,
 				description: sensors.description,
-				start_register: sensors.start_register,
-				end_register: sensors.end_register
+				plcId: sensors.plcId,
+				locked: sensors.locked
 			})
 		}
 		if (isError) {
@@ -101,8 +100,8 @@ export default function SensorDetails() {
 	const fields = [
 		{ name: "name", label: "Label", placeholder: "my-agent", type: "input" as const },
 		{ name: "description", label: "Description", placeholder: "very awesome agent", type: "input" as const },
-		{ name: "start_register", label: "Start Reg", placeholder: "very awesome agent", type: "input" as const },
-		{ name: "end_register", label: "End Reg", placeholder: "true", type: "input" as const },
+		{ name: "plcId", label: "PLC ID", placeholder: "very awesome agent", type: "input" as const },
+		{ name: "locked", label: "Locked", placeholder: "true", type: "checkbox" as const },
 	];
 	const onDelete = () => {
 		deleteMutation.mutate()
@@ -116,12 +115,17 @@ export default function SensorDetails() {
 		<div className='py-8 '>
 			<div className='flex flex-row text-xl justify-around w-full p-4'>
 				<CustomForm onSubmit={onSubmit} formSchema={formSchema} fields={fields} defaultValues={defaultVal} />
-				{sensors && <div className='ps-3 text-2xl flex flex-col gap-4 pt-2'>
-					<p className='text-[#808191]'><span className=' text-[#808191] font-medium'>Created At:</span> {sensors.createdAt}</p>
-					<p className='text-[#808191]'><span className=' text-[#808191] font-medium'>Status:</span> {sensors.status}</p>
+				{sensors && (
+					<div className='ps-3 text-2xl flex flex-col gap-4 pt-2'>
+						<p className='text-[#808191]'><span className='text-[#808191] font-medium'>Fingerprint:</span> {sensors.fingerprint}</p>
+						<p className='text-[#808191]'><span className=' text-[#808191] font-medium'>Created At:</span> {sensors.createdAt}</p>
+						<p className='text-[#808191]'><span className=' text-[#808191] font-medium'>Known:</span> {sensors.known ? "true" : "false"} </p>
+						<p className='text-[#808191]'><span className=' text-[#808191] font-medium'>Status:</span> {sensors.status}</p>
+						<Button onClick={onDelete} className="bg-red-300 hover:bg-red-200 w-88 text-black">Remove Agent</Button>
+					</div>
 
-					<Button onClick={onDelete} className="bg-red-300 hover:bg-red-200 w-88 text-black">Remove Sensor</Button>
-				</div>}
+				)}
+
 			</div>
 
 		</div >

@@ -1,5 +1,4 @@
 import { Route, Routes } from "react-router-dom";
-import { Toaster } from "@/components/ui/sonner"
 import "./App.css";
 import Sidebar from "./components/ui/side-bar";
 import ProtectedRoute from "./components/protected-route";
@@ -10,6 +9,7 @@ import Details from "./components/pages/details";
 import Sensors from "./components/pages/sensors";
 import SensorDetails from "./components/pages/sensor-details";
 import AgentDetails from "./components/pages/agent-details";
+import { Toaster } from "sonner";
 
 function App() {
 
