@@ -1,17 +1,15 @@
 import { socket } from '@/App';
-import { useEffect, useState } from 'react';
+import Logs from '@/components/ui/socker-logs';
+import { useEffect } from 'react';
 
 export const SocketComponent = () => {
-  const [message, setMessage] = useState('');
 
   useEffect(() => {
     socket.on('connect', () => {
       console.log('Connected:', socket.id);
     });
-
     socket.on('message', (data) => {
       console.log('Message received:', data);
-      setMessage(data);
     });
 
     return () => {
@@ -20,6 +18,10 @@ export const SocketComponent = () => {
     };
   }, []);
 
-  return <div>Message from server: { message } </div>;
+  return (
+    <div className="p-6">
+      <h1 className="text-xl font-semibold mb-4">Live Logs</h1>
+      {socket ? <Logs socket={socket} /> : <p>Connecting...</p>}
+    </div>);
 };
 

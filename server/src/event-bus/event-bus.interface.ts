@@ -8,5 +8,16 @@ export interface AppEvents {
 	'sensor:created': { id: string, label: string, start_register: number, end_register: number };
 	'sensor:updated': { id: string, label: string, start_register: number, end_register: number };
 	'sensor:deleted': { id: string }
+
+	'process:created': { id: string, agentId: string };
+	'process:cycle-done': { id: string, agentId: string };
+	'process:updated': { id: string, agentId: string };
+	'process:deleted': { id: string };
+	'process:kill': { id: string };
+
+	'step:valid': { id: string, stepId: string, agentId: string };
+	'step:running': { id: string, stepId: string, agentId: string };
+
+	'sensor:process-state-updated': { label: string, value: number, agentId: string};
 }
 

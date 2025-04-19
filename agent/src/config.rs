@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-pub const MONITOR_INTERVAL_MS: u64 = 100;
+pub const MONITOR_INTERVAL_MS: u64 = 1000;
 pub const CONNECTION_RETRY_MS: u64 = 2000;
 pub const MESSAGE_CHANNEL_SIZE: usize = 32;
 

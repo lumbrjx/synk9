@@ -42,6 +42,7 @@ pub async fn read_from_plc(
     let data = ctx
         .read_holding_registers(start_register, end_register)
         .await?;
+    println!("{:?}", data);
     let result = data[0];
 
     Ok(result)

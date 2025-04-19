@@ -20,6 +20,7 @@ export class EventBusService {
 	}
 
 	emit<K extends EventKey>(type: K, payload: AppEvents[K]): void {
+		console.log("sending:", type);
 		this.subject.next({ type, payload })
 	}
 

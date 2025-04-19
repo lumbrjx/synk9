@@ -28,7 +28,9 @@ export class AgentService {
 	findAll() {
 		return this.agentRepository.find();
 	}
-
+	findByFingerprint(fingerprint: string) {
+		return this.agentRepository.findOne({ where: { fingerprint } });
+	}
 	findOne(id: string) {
 		return this.agentRepository.findOne({ where: { id } });
 	}
@@ -49,8 +51,8 @@ export class AgentService {
 
 	async remove(id: string) {
 		const deleted = await this.agentRepository.softDelete({ id })
-		if(deleted.affected){
-		 this.eventBus.emit("agent:deleted", { id });
+		if (deleted.affected) {
+			this.eventBus.emit("agent:deleted", { id });
 		}
 	}
 }

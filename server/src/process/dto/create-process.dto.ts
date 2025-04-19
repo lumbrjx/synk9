@@ -45,10 +45,7 @@ export class CreateProcessDto {
 
 	@IsString()
 	description: string;
-
-	@IsString()
-	label: string;
-
+	
 	@IsUUID()
 	agentId: string;
 }

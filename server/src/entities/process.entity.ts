@@ -2,6 +2,11 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColum
 import { ProcessStep } from './process-steps.entity';
 import { Agent } from './agent.entity';
 
+export enum ProcessState{
+	running= 'running',
+	stopped= 'stopped',
+}
+
 @Entity()
 export class Process {
 	@PrimaryGeneratedColumn("uuid")
@@ -13,11 +18,15 @@ export class Process {
 	@Column()
 	description: string;
 
+	@Column({
+		type: 'enum',
+		enum: ProcessState,
+		default: ProcessState.stopped,
+	})
+	status: ProcessState;
+
 	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
-
-	@Column("text", { array: true, nullable: true })
-	label: string[];
 
 	@OneToMany(() => ProcessStep, step => step.process, { cascade: true })
 	steps: ProcessStep[];

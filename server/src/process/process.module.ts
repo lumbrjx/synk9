@@ -12,5 +12,6 @@ import { Rule, Sensor } from 'src/entities';
 	imports: [TypeOrmModule.forFeature([ProcessStep, Process, Sensor, Rule])],
 	controllers: [ProcessController, ProcessStepController],
 	providers: [ProcessService, ProcessStepService],
+	exports: [ProcessService],
 })
 export class ProcessModule { }

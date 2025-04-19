@@ -10,8 +10,13 @@ use crate::ChEvent;
 pub async fn setup_socket_io(
     url: &str,
     tx: mpsc::Sender<ChEvent>,
+    fingerprint: &str,
 ) -> Result<Client, Box<dyn StdError>> {
     let socket = ClientBuilder::new(url)
+        .auth(json!({
+            "token": fingerprint, 
+            "type": "agent"
+        }))
         .namespace("/")
         .on("data", move |payload: Payload, socket: Client| {
             let tx = tx.clone();

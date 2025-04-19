@@ -13,7 +13,7 @@ export class Rule {
 	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
 
-	@Column('text')
+	@Column()
 	expectedValue: number;
 
 	@ManyToOne(() => ProcessStep, step => step.rules, { onDelete: 'CASCADE' })

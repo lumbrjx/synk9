@@ -13,7 +13,12 @@ import { Toaster } from "sonner";
 import { io } from 'socket.io-client';
 import { baseUrl } from "./config";
 
-export const socket = io(baseUrl);
+export const socket = io(baseUrl, {
+  auth: {
+    token: "your-jwt-token-here",
+    type: "client"
+  }
+});
 function App() {
 
 

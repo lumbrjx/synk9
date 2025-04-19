@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ProcessStep, Rule, Sensor } from 'src/entities';
+import { Process, ProcessState, ProcessStep, Rule, Sensor } from 'src/entities';
 import { DataSource, In, Repository } from 'typeorm';
 import { CreateProcessStepDto } from './dto/create-process.dto';
 import { UpdateProcessStepDto } from './dto/update-process.dto';
@@ -10,12 +10,21 @@ export class ProcessStepService {
 	constructor(
 		@InjectRepository(ProcessStep)
 		private processStepRepository: Repository<ProcessStep>,
+		@InjectRepository(Process)
+		private processRepository: Repository<Process>,
 		private dataSource: DataSource,
 	) { }
 
 	async create(createProcessStepDto: CreateProcessStepDto) {
 		return await this.dataSource.transaction(async (manager) => {
 			// Get all sensor IDs from the rules and fetch sensors from DB
+			const process = await this.processRepository.findOne({ where: { id: createProcessStepDto.processId } })
+			if (!process) {
+				throw new Error("Cannot find process")
+			}
+			if (process.status === ProcessState.running) {
+				throw new Error("Cannot edit a running process")
+			}
 			const sensorIds = createProcessStepDto.rules.map(rule => rule.sensor_id);
 			const sensors = await manager.findBy(Sensor, { id: In(sensorIds) });
 
