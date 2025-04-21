@@ -8,15 +8,12 @@ export const SocketComponent = () => {
     socket.on('connect', () => {
       console.log('Connected:', socket.id);
     });
-    socket.on('message', (data) => {
-      console.log('Message received:', data);
-    });
 
     return () => {
       socket.off('connect');
-      socket.off('message');
+      socket.off('data');
     };
-  }, []);
+  }, [socket]);
 
   return (
     <div className="p-6">

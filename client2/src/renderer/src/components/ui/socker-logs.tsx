@@ -12,19 +12,19 @@ const Logs: React.FC<LogsProps> = ({ socket }) => {
   const logsEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleMessage = (message: string) => {
+    const handleMessage = (message: any) => {
       try {
-        const parsed: LogEntry = JSON.parse(message);
+        const parsed: LogEntry = message;
         setLogs((prev) => [...prev, parsed]);
       } catch (err) {
         console.error('Failed to parse log message:', err);
       }
     };
 
-    socket.on('message', handleMessage);
+    socket.on('data', handleMessage);
 
     return () => {
-      socket.off('message', handleMessage);
+      socket.off('data', handleMessage);
     };
   }, [socket]);
 

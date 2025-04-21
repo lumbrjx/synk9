@@ -46,6 +46,7 @@ impl Agent {
             }
             ChEvent::HealthCheck => {
                 let state = self.state.lock().await;
+                println!("reciebved helath signal");
                 self.send_json("health_check", &state.registered_sensors)
                     .await?;
             }
@@ -117,7 +118,13 @@ impl Agent {
                     self.send_message("agent_locked", "Agent is locked").await?;
                     return Ok(());
                 }
-                state.edit_sensor(id, label.clone(), *start_register, *end_register);
+                state.remove_sensor(id);
+                state.add_sensor(SensorConfig {
+                    id: id.to_string(),
+                    label: label.to_string(),
+                    start_register: *start_register,
+                    end_register: *end_register,
+                });
             }
             ChEvent::PauseAgent => {
                 let mut state = self.state.lock().await;

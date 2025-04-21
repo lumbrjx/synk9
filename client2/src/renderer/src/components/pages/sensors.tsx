@@ -6,7 +6,7 @@ import { useAxiosMutation } from "@/hooks/mutate";
 import { create } from "@/mutations/agent";
 import { useAxiosQuery } from "@/hooks/get";
 import { query } from "@/queries/agent";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -14,14 +14,10 @@ const formSchema = z.object({
   description: z.string().min(2),
   start_register: z.coerce.number(),
   end_register: z.coerce.number(),
+  agentId:z.string().min(2),
 })
 
-const fields = [
-  { name: "name", label: "Label", placeholder: "my-sensor", type: "input" as const },
-  { name: "description", label: "Description", placeholder: "very awesome sensor", type: "input" as const },
-  { name: "start_register", label: "Start Reg", placeholder: "512", type: "input-number" as const },
-  { name: "end_register", label: "End Reg", placeholder: "42", type: "input-number" as const },
-]
+
 const defaultValues = { name: "", description: "", start_register: 0, end_register: 0 };
 
 export default function Sensors() {
@@ -59,8 +55,9 @@ export default function Sensors() {
       try {
         console.log("Fetching agents...");
         const response = await query('/sensor');
+        const response2 = await query('/agent');
         console.log("Fetch response:", response);
-        return response;
+        return {response, response2};
       } catch (e) {
         console.error("Fetch error:", e);
         throw e;
@@ -85,12 +82,22 @@ export default function Sensors() {
       }
     },
   })
-
+  const [defaultVal, setDefaultVal] = useState([]);
+  const fields = [
+    { name: "name", label: "Label", placeholder: "my-sensor", type: "input" as const },
+    { name: "description", label: "Description", placeholder: "very awesome sensor", type: "input" as const },
+    { name: "start_register", label: "Start Reg", placeholder: "512", type: "input-number" as const },
+    { name: "end_register", label: "End Reg", placeholder: "42", type: "input-number" as const },
+    { name: "agentId", label: "Pick an Agent", placeholder: "agent", type: "select" as const, options: defaultVal || [] },
+  ]
   useEffect(() => {
     console.log("Query status changed:", status);
     console.log("isLoading:", isLoading);
     console.log("isFetching:", isFetching);
-
+    if (agents?.response2) {
+      const filtered = agents.response2.map((sensor: any) => ({ value: sensor.id, label: sensor.name }));
+      setDefaultVal(filtered);
+    }
     if (isError) {
       console.error("Error details:", error);
     }
@@ -128,7 +135,7 @@ export default function Sensors() {
             <DataTable
               route="sensor/details"
               columns={columns}
-              data={agents || []}
+              data={agents?.response || []}
             />
           )}
         </div>

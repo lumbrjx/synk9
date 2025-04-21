@@ -13,4 +13,7 @@ export class CreateSensorDto {
 	@IsNumber()
 	end_register: number;
 
+	@IsString()
+	agentId: string;
+
 }

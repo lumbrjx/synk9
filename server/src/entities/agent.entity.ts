@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn, CreateDateColumn } from 'typeorm';
 import { Process } from './process.entity';
+import { Sensor } from './sensor.entity';
 
 export enum AgentState {
 	ready = 'ready',
@@ -45,5 +46,8 @@ export class Agent {
 
 	@OneToMany(() => Process, process => process.agent)
 	processes: Process[];
+
+	@OneToMany(() => Sensor, sensor => sensor.agent)
+	sensors: Sensor[];
 }
 

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Process } from './process.entity';
 import { Rule } from './rule.entity';
 
@@ -18,6 +18,9 @@ export class ProcessStep {
 
 	@CreateDateColumn({ type: 'timestamp' })
 	createdAt: Date;
+
+	@DeleteDateColumn({ type: 'timestamp', nullable: true })
+	deletedAt?: Date;
 
 	@ManyToOne(() => ProcessStep, { onDelete: 'CASCADE', nullable: true })
 	from: ProcessStep;

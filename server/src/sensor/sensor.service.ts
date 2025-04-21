@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Sensor } from 'src/entities';
 import { Repository } from 'typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
+import { AgentService } from 'src/agent/agent.service';
 
 @Injectable()
 export class SensorService {
@@ -13,6 +14,7 @@ export class SensorService {
 		@InjectRepository(Sensor)
 		private sensorRepository: Repository<Sensor>,
 		private eventBus: EventBusService,
+		private agentService: AgentService
 	) { }
 
 	async create(createSensorDto: CreateSensorDto) {
@@ -22,10 +24,13 @@ export class SensorService {
 		}
 		const saved = await this.sensorRepository.save(sensor);
 		if (saved) {
+			const agent = await this.agentService.findOne(saved.agentId);
+
 			this.eventBus.emit("sensor:created", {
 				label: saved.name,
 				id: saved.id,
 				start_register: saved.start_register,
+				agentFingerprint: agent?.fingerprint as string,
 				end_register: saved.end_register
 			});
 			return saved;
@@ -50,10 +55,13 @@ export class SensorService {
 		if (!updatedSensor.affected) {
 			throw new Error(`Failed to update the agent with ID: ${id}`);
 		}
+
+			const agent = await this.agentService.findOne(id);
 		this.eventBus.emit("sensor:updated", {
 			id,
 			label: updateSensorDto.name as string,
 			start_register: updateSensorDto.start_register as number,
+			agentFingerprint: agent?.fingerprint as string,
 			end_register: updateSensorDto.end_register as number,
 		});
 		return updatedSensor

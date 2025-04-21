@@ -1,10 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 import { ProcessStep } from './process-steps.entity';
 import { Agent } from './agent.entity';
 
-export enum ProcessState{
-	running= 'running',
-	stopped= 'stopped',
+export enum ProcessState {
+	running = 'running',
+	stopped = 'stopped',
 }
 
 @Entity()
@@ -34,5 +34,9 @@ export class Process {
 	@ManyToOne(() => Agent, agent => agent.processes, { nullable: false, onDelete: 'RESTRICT' })
 	@JoinColumn({ name: 'agentId' })
 	agent: Agent
+
+	@DeleteDateColumn({ type: 'timestamp', nullable: true })
+	deletedAt?: Date;
+
 }
 

@@ -160,14 +160,54 @@ export default function Details() {
     setIsRunning(false);
     console.log("Process paused");
     socket.emit("command", JSON.stringify({ command: "PAUSE-PROCESS", data: { id: id } }))
-    // Optionally call an API to pause the process
   };
+
+  const [liveStatus, setLiveStatus] = useState<any>([]);
+  useEffect(() => {
+    const handleMessage = (message: any) => {
+      try {
+        // Extract the first (and only) key dynamically
+        const [_eventType, data]: any = Object.entries(message)[0];
+
+        if (!data?.steps) return;
+
+        const parsedUpdates = data.steps.reduce((acc: any, step: any) => {
+          acc[step.stepId] = {
+            status: step.status,
+            // You can add more fields if needed
+          };
+          return acc;
+        }, {});
+
+
+        setLiveStatus((prev: any) => ({
+          ...prev,
+          ...parsedUpdates,
+        }));
+      } catch (err) {
+        console.error('Failed to parse log message:', err);
+      }
+    };
+
+    socket.on('step-data', handleMessage);
+
+    return () => {
+      socket.off('step-data', handleMessage);
+    };
+  }, [socket]);
+
+  console.log(liveStatus)
+
 
   return (
     <div className='flex justify-between'>
       {/* Main Content */}
       <div className='flex flex-col justify-between w-full p-4'>
-        <FlowCanvas steps={flowStep} setStepSideView={setStepSideView} />
+        <FlowCanvas
+          liveStatus={liveStatus}
+          steps={flowStep} setStepSideView={setStepSideView}
+          isProcessRunning={isRunning}
+        />
         <div className='text-white'>
           HMI for {id}
         </div>

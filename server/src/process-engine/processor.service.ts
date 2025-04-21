@@ -53,11 +53,21 @@ export class GlobalProcessConsumer extends WorkerHost {
 				return;
 			}
 
+
 			this.eventBus.emit('step:running', {
 				id,
-				stepId: currentStep.id,
 				agentId,
+				steps: process.steps.map((step, index) => ({
+					stepId: step.id,
+					status:
+						index < currentStepIndex
+							? 'success'
+							: index === currentStepIndex
+								? 'running'
+								: 'pending',
+				})),
 			});
+
 			this.logger.log(`🔄 Step ${currentStepIndex + 1} running (ID: ${currentStep.id})`);
 
 			let matchedRule: any = undefined;

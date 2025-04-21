@@ -16,6 +16,7 @@ import { AgentEventType } from 'src/event-bus/agent-events';
 import { AppEvents } from 'src/event-bus/event-bus.interface';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { ProcessService } from 'src/process/process.service';
+import { SyncService } from './sync.service';
 
 @WebSocketGateway({ cors: true })
 export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -26,7 +27,8 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		private eventBus: EventBusService,
 		private connectionStore: ConnectionStore,
 		private processService: ProcessService,
-		private agentService: AgentService
+		private agentService: AgentService,
+		private syncService: SyncService
 	) { }
 
 	afterInit(server: Server) {
@@ -49,14 +51,18 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-agent-"));
 		for (const id of agentsIds) {
 			const connection = await this.connectionStore.get(id);
-			connection?.socket.emit("data", { [event]: payload });
+			const d = connection?.socket.emit("data", { [event]: payload });
+			console.log(d);
 		}
 	}
-	async notifyClients<K extends AppEvents>(event: keyof K, payload: any) {
+
+	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data") {
 		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
 		for (const id of agentsIds) {
+			console.log(id)
 			const connection = await this.connectionStore.get(id);
-			connection?.socket.emit("step-data", { [event]: payload });
+			const l = connection?.socket.emit(channel, { [event]: payload });
+			console.log(l)
 		}
 	}
 	async sensorUpdated(payload: any) {
@@ -65,15 +71,15 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	}
 	async stepValid(payload: any) {
 		this.logger.log('Step Valid:', payload);
-		await this.notifyClients("step:valid", payload);
+		await this.notifyClients("step:valid", payload, 'step-data');
 	}
 	async cycleDone(payload: any) {
 		this.logger.log('process Cycle Done:', payload);
-		await this.notifyClients("process:cycle-done", payload);
+		await this.notifyClients("process:cycle-done", payload, 'step-data');
 	}
 	async stepRunning(payload: any) {
 		this.logger.log('Step Running:', payload);
-		await this.notifyClients("step:running", payload);
+		await this.notifyClients("step:running", payload, 'step-data');
 	}
 	async sensorDeleted(payload: any) {
 		this.logger.log('Sensor deleted:', payload);
@@ -85,21 +91,27 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.serverEmit("AddSensor", payload);
 	}
 
-	handleConnection(client: Socket) {
+	async handleConnection(client: Socket) {
 		this.logger.log(`Client connected: ${client.id}`);
 		const authType = client.handshake.auth.type;
-		let id: string = '';
 		if (authType === "client") {
-			id = `sock-client-${client.id}`
+			console.log("cks", client.handshake.auth.token)
+			const id = `sock-client-${client.id}`
+			await this.connectionStore.set(id, client, { userId: client.handshake.auth.token })
+			return;
 		}
 		else if (authType === "agent") {
 			console.log("otk", client.handshake.auth.token)
-			id = `sock-agent-${client.id}`
+			const id = `sock-agent-${client.id}`
+			await this.connectionStore.set(id, client, { userId: client.handshake.auth.token})
+			client.emit("data", "HealthCheck");
+			return;
 		} else {
+			console.log("auths", client.handshake.auth.token)
+			console.log("discon from", client.id)
 			client.disconnect(true)
 			return;
 		}
-		this.connectionStore.set(id, client, { userId: client.handshake.auth.token })
 	}
 
 	handleDisconnect(client: Socket) {
@@ -114,7 +126,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		const process = await this.processService.findOne(parsedData.id, ['steps', 'agent']) as Process
 		if (!process.steps || !process.steps.length) {
 			const socket = await this.connectionStore.get("your-jwt-token-here");
-			socket?.socket.emit("message", "Add process Steps first");
+			socket?.socket.emit("data", "Add process Steps first");
 			return;
 		};
 		if (parsedData.command === "PAUSE-PROCESS") {
@@ -137,8 +149,11 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	): Promise<void> {
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
 
-		const socket = await this.connectionStore.get("your-jwt-token-here");
-		socket?.socket.emit("message", data);
+		const clientIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
+		for (const id of clientIds) {
+			const connection = await this.connectionStore.get(id);
+			connection?.socket.emit("data", data);
+		}
 
 		const agentId = this.connectionStore.getAllIds()
 			.filter(sock => sock.startsWith("sock-agent-"))
@@ -155,5 +170,18 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			value: data.value,
 			agentId: agentDbId.id,
 		});
+	}
+	@SubscribeMessage('health_check')
+	async handleHealthCheckMessage(
+		@MessageBody() data: any,
+		@ConnectedSocket() client: Socket,
+	): Promise<void> {
+		this.logger.log(`Received health message: ${JSON.stringify(data)}`);
+
+		const agentId = await this.connectionStore.get("sock-agent-" + client.id)
+		if(!agentId) return;
+		
+		this.syncService.syncAgentWithServerData(data, agentId?.metadata.userId as string);
+
 	}
 }

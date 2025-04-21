@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Sensor } from './sensor.entity';
 import { ProcessStep } from './process-steps.entity';
 
@@ -19,5 +19,9 @@ export class Rule {
 	@ManyToOne(() => ProcessStep, step => step.rules, { onDelete: 'CASCADE' })
 	@JoinColumn({ name: 'id' })
 	step: ProcessStep;
+
+	@DeleteDateColumn({ type: 'timestamp', nullable: true })
+	deletedAt?: Date;
+
 }
 
