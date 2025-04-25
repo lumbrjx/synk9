@@ -55,9 +55,23 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			console.log(d);
 		}
 	}
+	async notifyAgentViaFingerprint<K extends AgentEventType>(event: K, payload: any) {
+		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-agent-"));
+		for (const id of agentsIds) {
+			console.log(id);
+			const agent = await this.connectionStore.get(id);
+			console.log(agent)
+			if (agent?.metadata.userId === payload.agentFingerprint) {
+				console.log("foundnn")
+				agent?.socket.emit(event, payload);
+			}
+		}
+	}
 
-	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data") {
+	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected") {
 		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
+
+		console.log("yesss")
 		for (const id of agentsIds) {
 			console.log(id)
 			const connection = await this.connectionStore.get(id);
@@ -67,7 +81,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	}
 	async sensorUpdated(payload: any) {
 		this.logger.log('Sensor updated:', payload);
-		await this.notifyAgents("EditSensor", payload);
+		await this.notifyAgentViaFingerprint("EditSensor", payload);
 	}
 	async stepValid(payload: any) {
 		this.logger.log('Step Valid:', payload);
@@ -83,12 +97,13 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	}
 	async sensorDeleted(payload: any) {
 		this.logger.log('Sensor deleted:', payload);
-		await this.notifyAgents("RemoveSensor", payload);
+		await this.notifyAgentViaFingerprint("RemoveSensor", payload);
 	}
 
-	sensorCreated(payload: any) {
+	async sensorCreated(payload: any) {
 		this.logger.log('Sensor created:', payload);
-		this.serverEmit("AddSensor", payload);
+		this.serverEmit("AddSensor", payload)
+		await this.notifyAgentViaFingerprint("AddSensor", payload)
 	}
 
 	async handleConnection(client: Socket) {
@@ -103,7 +118,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		else if (authType === "agent") {
 			console.log("otk", client.handshake.auth.token)
 			const id = `sock-agent-${client.id}`
-			await this.connectionStore.set(id, client, { userId: client.handshake.auth.token})
+			await this.connectionStore.set(id, client, { userId: client.handshake.auth.token })
 			client.emit("data", "HealthCheck");
 			return;
 		} else {
@@ -114,8 +129,19 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		}
 	}
 
-	handleDisconnect(client: Socket) {
+	async handleDisconnect(client: Socket) {
 		this.logger.log(`Client disconnected: ${client.id}`);
+		const agentSocketId = await this.connectionStore.get("sock-agent-" + client.id)
+		if (!agentSocketId) return;
+		const agentId = await this.agentService.findByFingerprint(agentSocketId.metadata.userId, ["processes"]);
+		if (!agentId?.processes || !agentId.processes.length) return;
+		for (const process of agentId?.processes) {
+			this.eventBus.emit("process:kill", { id: process.id })
+			this.processService.updateState(process.id, ProcessState.stopped);
+			console.log("yesss")
+			await this.notifyClients("agent:disconnected", { processId: process.id }, 'agent-disconnected');
+		}
+		return;
 	}
 	@SubscribeMessage('command')
 	async handleCommand(
@@ -179,8 +205,8 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.logger.log(`Received health message: ${JSON.stringify(data)}`);
 
 		const agentId = await this.connectionStore.get("sock-agent-" + client.id)
-		if(!agentId) return;
-		
+		if (!agentId) return;
+
 		this.syncService.syncAgentWithServerData(data, agentId?.metadata.userId as string);
 
 	}

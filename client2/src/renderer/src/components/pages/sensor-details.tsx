@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { useAxiosMutation } from "@/hooks/mutate";
 import { z } from 'zod';
@@ -8,6 +8,7 @@ import { query } from '@/queries/agent';
 import { useEffect, useState } from 'react';
 import { CustomForm } from '../ui/custom-form';
 import { toast } from 'sonner';
+import { queryClient } from '@/main';
 
 const formSchema = z.object({
 	name: z.string().min(2),
@@ -26,6 +27,7 @@ export default function SensorDetails() {
 		options: {
 			onSuccess: () => {
 				toast.success("Sensor updated successfully!");
+				queryClient.invalidateQueries({ queryKey: ['oneSensor'] });
 			},
 			onError: (e) => {
 				console.error("Create error", e);
@@ -65,12 +67,16 @@ export default function SensorDetails() {
 			retry: 10,
 		}
 	});
+
+	const navigate = useNavigate();
 	const deleteMutation = useAxiosMutation({
 		mutationFn: () =>
 			remove("/sensor/" + id),
 		options: {
 			onSuccess: () => {
 				toast.success("Sensor deleted successfully!");
+				queryClient.invalidateQueries({ queryKey: ['oneSensor'] });
+        navigate("/sensors");
 			},
 			onError: (e) => {
 				console.error("Create error", e);

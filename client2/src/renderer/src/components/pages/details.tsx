@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { useAxiosMutation } from "@/hooks/mutate";
 import FlowCanvas from '../ui/flows';
@@ -10,6 +11,8 @@ import { query } from '@/queries/agent';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { socket } from '@/App';
+import { queryClient } from '@/main';
+import ScadaFlowBuilderWrapper from '../ui/flow';
 
 const formSchema = z.object({
   name: z.string().min(2),
@@ -43,6 +46,8 @@ export default function Details() {
     options: {
       onSuccess: () => {
         toast.success("Process step created successfully!");
+
+        queryClient.invalidateQueries({ queryKey: ['steps'] });
       },
       onError: (e) => {
         console.error("Create error", e);
@@ -51,12 +56,15 @@ export default function Details() {
     }
   });
 
+  const navigate = useNavigate();
   const deleteMutation = useAxiosMutation({
     mutationFn: () =>
       remove("/process/" + id),
     options: {
       onSuccess: () => {
         toast.success("Process removed successfully!");
+        queryClient.invalidateQueries({ queryKey: ['steps'] });
+        navigate("/processes")
       },
       onError: (e) => {
         console.error("Create error", e);
@@ -149,112 +157,32 @@ export default function Details() {
     },
   ];
 
-  const handleStart = () => {
-    setIsRunning(true);
-    console.log("Process started");
-    socket.emit("command", JSON.stringify({ command: "START-PROCESS", data: { id: id } }))
-    // Optionally call an API to start the process
-  };
 
-  const handlePause = () => {
-    setIsRunning(false);
-    console.log("Process paused");
-    socket.emit("command", JSON.stringify({ command: "PAUSE-PROCESS", data: { id: id } }))
-  };
-
-  const [liveStatus, setLiveStatus] = useState<any>([]);
-  useEffect(() => {
-    const handleMessage = (message: any) => {
-      try {
-        // Extract the first (and only) key dynamically
-        const [_eventType, data]: any = Object.entries(message)[0];
-
-        if (!data?.steps) return;
-
-        const parsedUpdates = data.steps.reduce((acc: any, step: any) => {
-          acc[step.stepId] = {
-            status: step.status,
-            // You can add more fields if needed
-          };
-          return acc;
-        }, {});
-
-
-        setLiveStatus((prev: any) => ({
-          ...prev,
-          ...parsedUpdates,
-        }));
-      } catch (err) {
-        console.error('Failed to parse log message:', err);
-      }
-    };
-
-    socket.on('step-data', handleMessage);
-
-    return () => {
-      socket.off('step-data', handleMessage);
-    };
-  }, [socket]);
-
-  console.log(liveStatus)
 
 
   return (
     <div className='flex justify-between'>
       {/* Main Content */}
       <div className='flex flex-col justify-between w-full p-4'>
-        <FlowCanvas
-          liveStatus={liveStatus}
-          steps={flowStep} setStepSideView={setStepSideView}
-          isProcessRunning={isRunning}
+
+        <ScadaFlowBuilderWrapper
+          formSchema={formSchema}
+          formFields={fields}
+          defaultValues={defaultValues}
+          onSubmit={(d: any) => onSubmit(d)}
+          drawerDescription="Add a new process step to the system."
+          drawerTitle="Add New Process Step"
+          buttonDisabled={isRunning}
+          topic="Add Process Step"
+          setIsRunning={(d) => setIsRunning(d)}
+          onDelete={()=> onDelete()}
+          pageId={id}
         />
         <div className='text-white'>
           HMI for {id}
         </div>
       </div>
 
-      {/* Sidebar */}
-      <div className='py-11 flex flex-col justify-between w-1/4 bg-[#1b1b1d] p-4 text-white h-screen'>
-        <h2 className='text-xl mb-4'>Sidebar</h2>
-        <p>{isRunning ? (sideView ? sideView?.label : "Check steps") : (proc ? proc.name : "nothing to show")}</p>
-
-        <div className="w-full flex flex-col gap-4">
-          <CustomDrawer
-            formSchema={formSchema}
-            formFields={fields}
-            defaultValues={defaultValues}
-            onSubmit={(d: any) => onSubmit(d)}
-            drawerDescription="Add a new process step to the system."
-            drawerTitle="Add New Process Step"
-            buttonDisabled={isRunning}
-            topic="Add Process Step"
-          />
-
-          {isRunning ? (
-            <Button
-              onClick={handlePause}
-              className="bg-yellow-300 hover:bg-yellow-200 w-88 text-black"
-            >
-              Pause Process
-            </Button>
-          ) : (
-            <Button
-              onClick={handleStart}
-              className="bg-green-300 hover:bg-green-200 w-88 text-black"
-            >
-              Start Process
-            </Button>
-          )}
-
-          <Button
-            onClick={onDelete}
-            className="bg-red-300 hover:bg-red-200 w-88 text-black"
-            disabled={isRunning}
-          >
-            Remove Process
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

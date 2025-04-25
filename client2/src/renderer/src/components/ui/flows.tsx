@@ -143,7 +143,7 @@ export default function FlowCanvas({ isProcessRunning, liveStatus, steps, setSte
         nodeTypes={nodeTypes}
         fitView
         nodesDraggable={true}
-        nodesConnectable={false}
+        nodesConnectable={true}
         onNodeClick={(_event, node) => setStepSideView(node.data)}
         elementsSelectable={true}
       />

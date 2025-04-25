@@ -1,5 +1,4 @@
 import { SocketComponent } from "@/sock/sock";
-
 export default function Dashboard() {
 
   return (
@@ -9,6 +8,7 @@ export default function Dashboard() {
         <SocketComponent />
         Welcome to autotakt
       </div>
+
     </div>
   );
 }

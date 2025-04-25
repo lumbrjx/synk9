@@ -5,6 +5,7 @@ export interface AppEvents {
 	'agent:updated': { id: string };
 	'agent:deleted': { id: string }
 	'agent:cleanup': { id: string }
+	'agent:disconnected': { processId: string }
 	'agent:sync': { id: string, label: string, start_register: number, end_register: number, agentFingerprint:string };
 
 	'sensor:created': { id: string, label: string, start_register: number, end_register: number, agentFingerprint:string };
