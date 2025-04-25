@@ -23,7 +23,7 @@ async fn main() -> Result<(), Box<dyn StdError>> {
     dotenv().ok();
     
     let hostname = env::var("HOSTNAME").expect("HOSTNAME environment variable is required");
-    let fingerprint= env::var("FINGERPRINT").expect("FINGERPRINT environment variable is required");
+    let fingerprint= env::var("FINGERPRINT").expect("environment variable is required");
     let socket_io_url = env::var("WS_URL").expect("WS_URL environment variable is required");
     
     println!("Starting agent, connecting to PLC at {} and Socket.IO at {}", hostname, socket_io_url);

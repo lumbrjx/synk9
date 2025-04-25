@@ -28,8 +28,8 @@ export class AgentService {
 	findAll() {
 		return this.agentRepository.find();
 	}
-	findByFingerprint(fingerprint: string) {
-		return this.agentRepository.findOne({ where: { fingerprint } });
+	findByFingerprint(fingerprint: string, relations?: string[]) {
+		return this.agentRepository.findOne({ where: { fingerprint }, relations });
 	}
 	findOne(id: string) {
 		return this.agentRepository.findOne({ where: { id } });

@@ -4,8 +4,11 @@ export interface AppEvents {
 	'agent:created': { id: string };
 	'agent:updated': { id: string };
 	'agent:deleted': { id: string }
+	'agent:cleanup': { id: string }
+	'agent:sync': { id: string, label: string, start_register: number, end_register: number, agentFingerprint:string };
 
 	'sensor:created': { id: string, label: string, start_register: number, end_register: number, agentFingerprint:string };
+
 	'sensor:updated': { id: string, label: string, start_register: number, end_register: number , agentFingerprint:string};
 	'sensor:deleted': { id: string }
 

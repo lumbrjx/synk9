@@ -1,24 +1,23 @@
+use serde_json::Value;
 use std::error::Error as StdError;
 use thiserror::Error;
 
 use crate::ChEvent;
 
-
-
-#[derive(Debug, Error)]
+#[derive(Debug, PartialEq, Error)]
 pub enum AppError {
     #[error("Validation failed: {0}")]
     ValidationError(String),
-    
+
     #[error("Deserialization failed: {0}")]
     DeserializationError(String),
-    
+
     #[error("PLC communication error: {0}")]
     PlcError(String),
-    
+
     #[error("Socket.IO error: {0}")]
     SocketIoError(String),
-    
+
     #[error("Internal error: {0}")]
     InternalError(String),
 }
@@ -29,10 +28,7 @@ impl From<Box<dyn StdError>> for AppError {
     }
 }
 
-
-pub fn parse_message_to_event(data: &str) -> Result<ChEvent, AppError> {
-    serde_json::from_str(data)
+pub fn parse_message_to_event(data: &Value) -> Result<ChEvent, AppError> {
+    serde_json::from_value(data.clone())
         .map_err(|e| AppError::DeserializationError(format!("Failed to parse event: {}", e)))
 }
-
-

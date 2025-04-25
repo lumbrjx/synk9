@@ -39,15 +39,22 @@ async fn process_all_sensors(
 ) -> Result<(), AppError> {
     for sensor in sensors {
         let agent_clone = agent.clone();
+        let agentlock = agent.clone();
 
         // Process each sensor in its own task
         tokio::spawn(async move {
             if let Err(err) = process_single_sensor(agent_clone, sensor.clone()).await {
-                eprintln!("Error processing sensor {}: {}", sensor.id, err);
+                println!("Socket.IO error: {:?}", err);
+                if err == AppError::SocketIoError("EngineIO Error".to_string()) {
+                    let agent_guard = agentlock.lock().await;
+                    let mut state_lock = agent_guard.state.lock().await;
+                    state_lock.registered_sensors.clear();
+                }
             }
-        });
+        })
+        .await
+        .expect("Error");
     }
-
     Ok(())
 }
 
@@ -69,10 +76,12 @@ async fn process_single_sensor(
     let modbus_data = plc_io::ModbusData {
         time: timestamp,
         value: sensor_value,
-        key: sensor.label
+        key: sensor.label,
     };
 
-    agent_guard.send_json("monitoring_streamline", &modbus_data).await?;
+    agent_guard
+        .send_json("monitoring_streamline", &modbus_data)
+        .await?;
 
     Ok(())
 }

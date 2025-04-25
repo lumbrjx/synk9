@@ -1,5 +1,6 @@
 use futures::FutureExt;
-use rust_socketio::{asynchronous::Client, asynchronous::ClientBuilder, Payload};
+use rust_socketio::Payload;
+use rust_socketio::{asynchronous::Client, asynchronous::ClientBuilder};
 use serde_json::json;
 use std::error::Error as StdError;
 use tokio::sync::mpsc;
@@ -14,31 +15,34 @@ pub async fn setup_socket_io(
 ) -> Result<Client, Box<dyn StdError>> {
     let socket = ClientBuilder::new(url)
         .auth(json!({
-            "token": fingerprint, 
+            "token": fingerprint,
             "type": "agent"
         }))
         .namespace("/")
+        .reconnect_on_disconnect(true)
         .on("data", move |payload: Payload, socket: Client| {
             let tx = tx.clone();
 
             async move {
                 match payload {
-                    Payload::String(ref str) => {
-                        println!("Received message: {}", str);
+                    Payload::Text(ref str) => {
+                        let msg = &str[0];
+                        println!("Received message: {:?}", msg);
 
-                        if let Payload::String(data) = payload {
-                            match parse_message_to_event(&data) {
-                                Ok(event) => {
-                                    if let Err(e) = tx.send(event).await {
-                                        eprintln!("Failed to send event to channel: {}", e);
-                                    }
+                        match parse_message_to_event(msg) {
+                            Ok(event) => {
+                                if let Err(e) = tx.send(event).await {
+                                    eprintln!("Failed to send event to channel: {}", e);
                                 }
-                                Err(e) => eprintln!("Failed to parse message: {}", e),
                             }
+                            Err(e) => eprintln!("Failed to parse message: {}", e),
                         }
                     }
                     Payload::Binary(bin_data) => {
                         println!("Received binary data: {:?}", bin_data);
+                    }
+                    _ => {
+                        println!("Received string data ");
                     }
                 }
 
@@ -50,7 +54,7 @@ pub async fn setup_socket_io(
         })
         .on("error", |err, _| {
             async move {
-                eprintln!("Socket.IO error: {:?}", err);
+                println!("Socket.IO error: {:?}", err);
             }
             .boxed()
         })
