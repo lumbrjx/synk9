@@ -15,6 +15,7 @@ import { socket } from '@/App';
 import { toast } from 'sonner';
 import BusIcon from './pumpicon';
 import { RulesInput } from './custom-adder';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
 
 // Helper function to adjust handle positions based on node rotation
 const rotationAdjustedPosition = (originalPosition, rotation) => {
@@ -490,94 +491,6 @@ const CounterNode = ({ data, isConnectable }) => (
   </div>
 );
 
-// Custom edge types
-const PipeEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd }) => {
-  const curvature = 0.5;
-  const midX = (sourceX + targetX) / 2;
-  const midY = (sourceY + targetY) / 2;
-
-  // Default pipe style
-  const pipeStyle = {
-    stroke: '#60A5FA',
-    strokeWidth: 5,
-    ...style
-  };
-
-  return (
-    <svg>
-      <defs>
-        <pattern id="pipe-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
-          <rect width="10" height="10" fill="none" />
-          <path d="M0,5 L10,5" stroke="#4B5563" strokeWidth="1" />
-        </pattern>
-      </defs>
-      <path
-        d={`M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`}
-        fill="none"
-        {...pipeStyle}
-        strokeLinecap="round"
-      />
-      {/* Flow direction indicator - small circles moving along the path */}
-      {style.animated && (
-        <>
-          <circle r="2" fill="white">
-            <animateMotion
-              path={`M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`}
-              dur="3s"
-              repeatCount="indefinite"
-            />
-          </circle>
-          <circle r="2" fill="white">
-            <animateMotion
-              path={`M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`}
-              dur="3s"
-              begin="1s"
-              repeatCount="indefinite"
-            />
-          </circle>
-          <circle r="2" fill="white">
-            <animateMotion
-              path={`M${sourceX},${sourceY} C${midX},${sourceY} ${midX},${targetY} ${targetX},${targetY}`}
-              dur="3s"
-              begin="2s"
-              repeatCount="indefinite"
-            />
-          </circle>
-        </>
-      )}
-    </svg>
-  );
-};
-
-const ElectricalEdge = ({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {} }) => {
-  // Calculate intermediate points to create a stepped line (right-angle turns)
-  const midX = (sourceX + targetX) / 2;
-
-  const electricalStyle = {
-    stroke: '#FCD34D',
-    strokeWidth: 2,
-    ...style
-  };
-
-  return (
-    <svg>
-      <path
-        d={`M${sourceX},${sourceY} L${midX},${sourceY} L${midX},${targetY} L${targetX},${targetY}`}
-        fill="none"
-        strokeDasharray={style.dashed ? "5,5" : "0"}
-        {...electricalStyle}
-      />
-      {/* Electric bolt symbol near target */}
-      <path
-        d={`M${targetX - 15},${targetY - 10} L${targetX - 5},${targetY - 5} L${targetX - 10},${targetY + 5} L${targetX},${targetY - 5}`}
-        fill={style.energized ? "#FCD34D" : "none"}
-        stroke="#FCD34D"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-};
-
 // Define custom node types
 const nodeTypes = {
   tank: TankNode,
@@ -589,11 +502,6 @@ const nodeTypes = {
   sensor: SensorNode
 };
 
-// Define custom edge types
-const edgeTypes = {
-  pipe: PipeEdge,
-  electricalLine: ElectricalEdge
-};
 
 // Sidebar component for adding new nodes
 const Sidebar = ({ onDragStart }) => {
@@ -608,7 +516,7 @@ const Sidebar = ({ onDragStart }) => {
   ];
 
   return (
-    <div className="w-50 border-r border-gray-700 p-4 overflow-y-auto">
+    <div className="w-50 h-240 border-r border-gray-700 p-4 overflow-y-auto">
       <h3 className="font-bold text-gray-200 mb-4">SCADA Components</h3>
       <div className="space-y-6">
         {componentTypes.map((component, index) => {
@@ -695,6 +603,8 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
     const { name, value, type } = e.target;
     let processedValue = value;
 
+    console.log(name, value, type)
+
     if (type === 'number') {
       processedValue = parseFloat(value);
       if (isNaN(processedValue)) processedValue = 0;
@@ -723,8 +633,8 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
   if (!selectedNode) {
     return (
 
-      <div className="w-72 border-l p-4">
-        <div className='py-11 flex flex-col justify-between p-4 text-white h-screen'>
+      <div className=" border-l p-4">
+        <div className='py-11 flex flex-col justify-between p-4 text-white '>
           <h2 className='text-xl mb-4'>Sidebar</h2>
 
           <div className="w-full flex flex-col gap-4">
@@ -978,6 +888,16 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
         />
       </div>
 
+      <div className="flex flex-col gap-2">
+        <label className="text-sm text-gray-300 text-white">kwadrado</label>
+        <input
+          name="kwadrado"
+          value={nodeProps.kwadrado || ''}
+          onChange={handleChange}
+          className="border border-gray-700 rounded-md p-2 "
+        />
+      </div>
+
       {renderPropertyFields()}
     </div>
   );
@@ -1082,8 +1002,11 @@ const ScadaFlowBuilder = ({ ...props }) => {
   };
 
   return (
-    <div className="flex h-screen text-gray-200">
-      <Sidebar onDragStart={onDragStart} />
+    <div className="flex text-gray-200">
+      <ScrollArea>
+        <Sidebar onDragStart={onDragStart} />
+      </ScrollArea>
+
 
       <div className="flex-1 flex flex-col" ref={reactFlowWrapper}>
         <div className="p-3 border-b border-gray-700 flex justify-between ">
@@ -1140,7 +1063,6 @@ const ScadaFlowBuilder = ({ ...props }) => {
 };
 // Export wrapped with provider
 export default function ScadaFlowBuilderWrapper({ ...props }) {
-  console.log("WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW", props.formFields)
   return (
     <ReactFlowProvider>
       <ScadaFlowBuilder
