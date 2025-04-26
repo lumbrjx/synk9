@@ -12,7 +12,8 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { socket } from '@/App';
 import { queryClient } from '@/main';
-import ScadaFlowBuilderWrapper from '../ui/flow';
+import ScadaFlowBuilderWrapper, { ScadaFlowBuilder } from '../ui/flow';
+import { ReactFlowProvider } from 'reactflow';
 
 const formSchema = z.object({
   name: z.string().min(2),
@@ -102,9 +103,9 @@ export default function Details() {
       try {
         console.log("Fetching agents...");
         const response = await query('/process/step/' + id);
-        const response2 = await query('/sensor');
+        const response2 = await query('/sensor/process/' + id);
         const response3 = await query('/process/' + id);
-        console.log("Fetch response:", response);
+        console.log("Fetch response:", response2);
         return { response, response2, response3 };
       } catch (e) {
         console.error("Fetch error:", e);
@@ -141,19 +142,9 @@ export default function Details() {
   }, [status, isLoading, isFetching, steps?.response2, steps?.response, isError, error]);
 
   const fields = [
-    { name: "name", label: "Label", placeholder: "my-agent", type: "input" as const },
-    { name: "description", label: "Description", placeholder: "very awesome agent", type: "input" as const },
     {
       name: "rules", label: "Rules", placeholder: "", type: "rules" as const,
       maxHeight: "150px", sensorOptions: availableSensors || []
-    },
-    {
-      name: "from", label: "From", placeholder: "None (first step)", type: "select" as const,
-      options: step || []
-    },
-    {
-      name: "to", label: "To", placeholder: "None (last step)", type: "select" as const,
-      options: step || []
     },
   ];
 
@@ -165,19 +156,23 @@ export default function Details() {
       {/* Main Content */}
       <div className='flex flex-col justify-between w-full p-4'>
 
-        <ScadaFlowBuilderWrapper
-          formSchema={formSchema}
-          formFields={fields}
-          defaultValues={defaultValues}
-          onSubmit={(d: any) => onSubmit(d)}
-          drawerDescription="Add a new process step to the system."
-          drawerTitle="Add New Process Step"
-          buttonDisabled={isRunning}
-          topic="Add Process Step"
-          setIsRunning={(d) => setIsRunning(d)}
-          onDelete={()=> onDelete()}
-          pageId={id}
-        />
+        <ReactFlowProvider>
+          <ScadaFlowBuilder
+            formSchema={formSchema}
+            formFields={fields}
+            defaultValues={defaultValues}
+            onSubmit={(d: any) => onSubmit(d)}
+            drawerDescription="Add a new process step to the system."
+            drawerTitle="Add New Process Step"
+            buttonDisabled={isRunning}
+            setIsRunning={(d) => setIsRunning(d)}
+            onDelete={() => onDelete()}
+            topic="Add Process Step"
+            pageId={id}
+            sensorOpt={availableSensors}
+          />
+        </ReactFlowProvider>
+
         <div className='text-white'>
           HMI for {id}
         </div>

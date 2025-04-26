@@ -5,7 +5,8 @@ import ReactFlow, {
   Position,
   useNodesState,
   useEdgesState,
-  ReactFlowProvider
+  ReactFlowProvider,
+  ConnectionLineType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Save, AlertCircle, RotateCcw, RotateCw } from 'lucide-react';
@@ -14,7 +15,7 @@ import { Button } from './button';
 import { socket } from '@/App';
 import { toast } from 'sonner';
 import BusIcon from './pumpicon';
-import { RulesInput } from './custom-adder';
+import { Rule, RulesInput } from './custom-adder';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 
 // Helper function to adjust handle positions based on node rotation
@@ -539,6 +540,15 @@ const Sidebar = ({ onDragStart }) => {
 
 // Properties panel component
 const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
+  const [rules, setRules] = useState<Rule[]>([])
+  const handleRulesChange = (newRules: Rule[]) => {
+    setRules(newRules)
+    const updatedProps = {
+      ...nodeProps,
+      "sensor": newRules
+    };
+    setNodeProps(updatedProps);
+  }
   const [nodeProps, setNodeProps] = useState(selectedNode?.data || {});
   const handleStart = () => {
     props.setIsRunning(true);
@@ -683,6 +693,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
 
   // Render different property fields based on node type
   const renderPropertyFields = () => {
+
     switch (selectedNode.type) {
       case 'tank':
         return (
@@ -865,6 +876,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
     }
   };
 
+
   return (
     <div className="w-72 border-l border-gray-700 p-4 flex flex-col gap-4 overflow-y-auto">
       <div className="flex justify-between items-center">
@@ -889,6 +901,11 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
       </div>
 
       <div className="flex flex-col gap-2">
+        <RulesInput
+          value={rules || []}
+          onChange={handleRulesChange}
+          sensorOptions={props.sensorOpt || []}
+        />
         <label className="text-sm text-gray-300 text-white">kwadrado</label>
         <input
           name="kwadrado"
@@ -904,7 +921,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
 };
 
 // Main FlowBuilder component
-const ScadaFlowBuilder = ({ ...props }) => {
+export const ScadaFlowBuilder = ({ ...props }) => {
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -938,7 +955,7 @@ const ScadaFlowBuilder = ({ ...props }) => {
     (event) => {
       event.preventDefault();
 
-      const reactFlowBounds = reactFlowWrapper?.current?.getBoundingClientRect();
+      const reactFlowBounds = (reactFlowWrapper?.current as any).getBoundingClientRect();
 
       // Get component data from drag event
       const rawData = event.dataTransfer.getData('application/json');
@@ -947,7 +964,7 @@ const ScadaFlowBuilder = ({ ...props }) => {
       const componentData = JSON.parse(rawData);
       const { type, label, initialData } = componentData;
 
-      const position = reactFlowInstance.project({
+      const position = (reactFlowInstance as any).project({
         x: event.clientX - reactFlowBounds.left,
         y: event.clientY - reactFlowBounds.top,
       });
@@ -1037,7 +1054,7 @@ const ScadaFlowBuilder = ({ ...props }) => {
           fitView
           deleteKeyCode="Delete"
           connectionLineStyle={{ stroke: '#60A5FA', strokeWidth: 3 }}
-          connectionLineType="smoothstep"
+          connectionLineType={ConnectionLineType.SmoothStep}
           defaultEdgeOptions={{ type: 'smoothstep' }}
         >
         </ReactFlow>
@@ -1057,27 +1074,9 @@ const ScadaFlowBuilder = ({ ...props }) => {
         setIsRunning={(d) => props.setIsRunning(d)}
         onDelete={() => props.onDelete()}
         pageId={props.pageId}
+        sensorOpt={props.sensorOpt}
       />
     </div>
   );
 };
-// Export wrapped with provider
-export default function ScadaFlowBuilderWrapper({ ...props }) {
-  return (
-    <ReactFlowProvider>
-      <ScadaFlowBuilder
-        formSchema={props.formSchema}
-        formFields={props.formFields}
-        defaultValues={props.defaultValues}
-        onSubmit={(d: any) => props.onSubmit(d)}
-        drawerDescription="Add a new process step to the system."
-        drawerTitle="Add New Process Step"
-        buttonDisabled={props.isRunning}
-        setIsRunning={(d) => props.setIsRunning(d)}
-        onDelete={() => props.onDelete()}
-        topic="Add Process Step"
-        pageId={props.pageId}
-      />
-    </ReactFlowProvider>
-  );
-}
+

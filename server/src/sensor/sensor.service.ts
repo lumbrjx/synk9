@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { CreateSensorDto } from './dto/create-sensor.dto';
 import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Sensor } from 'src/entities';
+import { Process, Sensor } from 'src/entities';
 import { Repository } from 'typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { AgentService } from 'src/agent/agent.service';
@@ -13,6 +13,8 @@ export class SensorService {
 	constructor(
 		@InjectRepository(Sensor)
 		private sensorRepository: Repository<Sensor>,
+		@InjectRepository(Process)
+		private processReposistory: Repository<Process>,
 		private eventBus: EventBusService,
 		private agentService: AgentService
 	) { }
@@ -40,7 +42,11 @@ export class SensorService {
 	findAll() {
 		return this.sensorRepository.find();
 	}
-
+	async findForProcess(id: string) {
+		console.log("iiiiiiddd", id)
+		const process = await this.processReposistory.findOne({ where: { id: id }, relations: ["agent"] })
+		return this.sensorRepository.find({ where: { agentId: process?.agent.id } });
+	}
 	findOne(id: string) {
 		return this.sensorRepository.findOne({ where: { id } });
 	}
@@ -56,7 +62,7 @@ export class SensorService {
 			throw new Error(`Failed to update the agent with ID: ${id}`);
 		}
 
-			const agent = await this.agentService.findOne(id);
+		const agent = await this.agentService.findOne(id);
 		this.eventBus.emit("sensor:updated", {
 			id,
 			label: updateSensorDto.name as string,
