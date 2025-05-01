@@ -35,6 +35,11 @@ export class Process {
 	@JoinColumn({ name: 'agentId' })
 	agent: Agent
 
+	@Column({
+		type: "json",
+		default: null
+	})
+	flow: any
 	@DeleteDateColumn({ type: 'timestamp', nullable: true })
 	deletedAt?: Date;
 

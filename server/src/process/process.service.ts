@@ -41,6 +41,26 @@ export class ProcessService {
 		// this.eventBus.emit("process:updated", { id: updatedProcess.raw.id, agentId: updatedProcess.raw.agent.id });
 		return updatedProcess;
 	}
+	async updateFlow(id: string, updateProcessDto: UpdateProcessDto) {
+		console.log("im process data:", updateProcessDto)
+
+		const process = await this.processRepository.findOne({ where: { id } })
+		if (!process) {
+			throw new Error("Cannot find process")
+		}
+		if (process.status === ProcessState.running) {
+			throw new Error("Cannot edit a running process")
+		}
+		const updatedProcess = await this.processRepository.update({ id }, {
+			flow: updateProcessDto as any
+		})
+		if (!updatedProcess.affected) {
+			throw new Error(`Failed to update the agent with ID: ${id}`);
+		}
+
+		// this.eventBus.emit("process:updated", { id: updatedProcess.raw.id, agentId: updatedProcess.raw.agent.id });
+		return updatedProcess;
+	}
 	async update(id: string, updateProcessDto: UpdateProcessDto) {
 
 		const process = await this.processRepository.findOne({ where: { id } })
