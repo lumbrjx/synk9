@@ -17,6 +17,12 @@ import { toast } from 'sonner';
 import BusIcon from './pumpicon';
 import { Rule, RulesInput } from './custom-adder';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
+import { useAxiosMutation } from '@/hooks/mutate';
+import { create, update } from '@/mutations/agent';
+import { queryClient } from '@/main';
+import { z } from 'zod';
+import { useAxiosQuery } from '@/hooks/get';
+import { query } from '@/queries/agent';
 
 // Helper function to adjust handle positions based on node rotation
 const rotationAdjustedPosition = (originalPosition, rotation) => {
@@ -1001,7 +1007,21 @@ export const ScadaFlowBuilder = ({ ...props }) => {
     },
     [setNodes]
   );
+  const createMutation = useAxiosMutation({
+    mutationFn: (data: any) =>
+      update("/process/flow/" + props.pageId, data),
+    options: {
+      onSuccess: () => {
+        toast.success("Process Configuration created successfully!");
 
+        queryClient.invalidateQueries({ queryKey: ['steps'] });
+      },
+      onError: (e) => {
+        console.error("Create error", e);
+        toast.error("Failed to create process step.");
+      }
+    }
+  });
   const onDragStart = (event, component) => {
     const componentData = JSON.stringify(component);
     event.dataTransfer.setData('application/json', componentData);
@@ -1010,14 +1030,50 @@ export const ScadaFlowBuilder = ({ ...props }) => {
 
   const saveFlow = () => {
     const flow = { nodes, edges };
-    alert("Flow configuration saved to console");
-    console.log(flow);
+    createMutation.mutate(flow);
   };
 
   const onPaneClick = () => {
     setSelectedNode(null);
   };
-
+  const {
+    data: process,
+    isLoading,
+    isError,
+    error,
+    isFetching,
+    status
+  } = useAxiosQuery({
+    queryKey: ['oneProcess'],
+    queryFn: async () => {
+      try {
+        console.log("Fetching agents...");
+        const response = await query('/process/' + props.pageId);
+        console.log("Fetch response:", response);
+        return response;
+      } catch (e) {
+        console.error("Fetch error:", e);
+        throw e;
+      }
+    },
+    options: {
+      refetchOnWindowFocus: false,
+      retry: 2,
+    }
+  });
+  useEffect(() => {
+    console.log("Query status changed:", status);
+    console.log("isLoading:", isLoading);
+    console.log("isFetching:", isFetching);
+    if (process) {
+      console.log("process data:", process.flow);
+      setEdges(process.flow.edges);
+      setNodes(process.flow.nodes);
+    }
+    if (isError) {
+      console.error("Error details:", error);
+    }
+  }, [status, isLoading, isFetching, process, isError, error]);
   return (
     <div className="flex text-gray-200">
       <ScrollArea>

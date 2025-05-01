@@ -12,8 +12,8 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { socket } from '@/App';
 import { queryClient } from '@/main';
-import ScadaFlowBuilderWrapper, { ScadaFlowBuilder } from '../ui/flow';
 import { ReactFlowProvider } from 'reactflow';
+import { ScadaFlowBuilder } from '../ui/flow';
 
 const formSchema = z.object({
   name: z.string().min(2),
