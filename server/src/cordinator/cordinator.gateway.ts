@@ -150,7 +150,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
 		const parsedData = JSON.parse(data)
 		const process = await this.processService.findOne(parsedData.id, ['steps', 'agent']) as Process
-		if (!process.steps || !process.steps.length) {
+		if (!process.flow) {
 			const socket = await this.connectionStore.get("your-jwt-token-here");
 			socket?.socket.emit("data", "Add process Steps first");
 			return;
@@ -162,6 +162,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			return;
 		}
 		if (parsedData.command === "START-PROCESS") {
+			console.log("startrtetewtsatasdtast")
 			this.eventBus.emit("process:created", { id: process?.id, agentId: process?.agent.id })
 			this.processService.updateState(process.id, ProcessState.running);
 			return;
@@ -170,7 +171,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 
 	@SubscribeMessage('monitoring_streamline')
 	async handleMessage(
-		@MessageBody() data: { key: string; value: any },
+		@MessageBody() data: { key: string; value: any , sensor_id: string},
 		@ConnectedSocket() client: Socket,
 	): Promise<void> {
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
@@ -195,6 +196,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			label: data.key,
 			value: data.value,
 			agentId: agentDbId.id,
+			sensor_id: data.sensor_id
 		});
 	}
 	@SubscribeMessage('health_check')

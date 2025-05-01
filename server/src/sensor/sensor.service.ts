@@ -3,7 +3,7 @@ import { CreateSensorDto } from './dto/create-sensor.dto';
 import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Process, Sensor } from 'src/entities';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { AgentService } from 'src/agent/agent.service';
 
@@ -39,6 +39,9 @@ export class SensorService {
 		}
 	}
 
+	findBatch(ids: string[]) {
+		return this.sensorRepository.find({ where: { id: In(ids) } })
+	}
 	findAll() {
 		return this.sensorRepository.find();
 	}

@@ -89,6 +89,7 @@ export default function Details() {
   const [flowStep, setFlowStep] = useState([]);
   const [availableSensors, setAvailableSensors] = useState([]);
   const [isRunning, setIsRunning] = useState(false); // <-- NEW STATE
+  console.log("imrunninnngng", isRunning);
 
   const {
     data: steps,

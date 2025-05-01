@@ -20,8 +20,8 @@ export interface AppEvents {
 	'process:kill': { id: string };
 
 	'step:valid': { id: string, stepId: string, agentId: string };
-	'step:running': { id: string, steps: any, agentId: string };
+	'step:running': { id: string, data: any, agentId: string };
 
-	'sensor:process-state-updated': { label: string, value: number, agentId: string};
+	'sensor:process-state-updated': { label: string, value: number, agentId: string, sensor_id: string};
 }
 

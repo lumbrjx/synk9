@@ -568,7 +568,6 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
     socket.emit("command", JSON.stringify({ command: "PAUSE-PROCESS", data: { id: props.pageId } }))
   };
 
-  const [liveStatus, setLiveStatus] = useState<any>([]);
   useEffect(() => {
     const handleDiscon = () => {
       toast.error("Lost connection to agent..");
@@ -579,27 +578,18 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
       }
     };
 
-
     const handleMessage = (message: any) => {
+      console.log("i got maee", message);
       try {
         // Extract the first (and only) key dynamically
         const [_eventType, data]: any = Object.entries(message)[0];
+        if (data.id !== props.pageId) return;
+        console.log("data", data)
 
-        if (!data?.steps) return;
+        if (!data?.data) return;
+        props.setEdges(data.data.edges);
+        props.setNodes(data.data.nodes);
 
-        const parsedUpdates = data.steps.reduce((acc: any, step: any) => {
-          acc[step.stepId] = {
-            status: step.status,
-            // You can add more fields if needed
-          };
-          return acc;
-        }, {});
-
-
-        setLiveStatus((prev: any) => ({
-          ...prev,
-          ...parsedUpdates,
-        }));
       } catch (err) {
         console.error('Failed to parse log message:', err);
       }
@@ -646,6 +636,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
   const handleSave = () => {
     onNodeUpdate(selectedNode.id, nodeProps);
   };
+  console.log("immmm", props.buttonDisabled)
   if (!selectedNode) {
     return (
 
@@ -654,18 +645,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
           <h2 className='text-xl mb-4'>Sidebar</h2>
 
           <div className="w-full flex flex-col gap-4">
-            <CustomDrawer
-              formSchema={props.formSchema}
-              formFields={props.formFields}
-              defaultValues={props.defaultValues}
-              onSubmit={(d: any) => props.onSubmit(d)}
-              drawerDescription="Add a new process step to the system."
-              drawerTitle="Add New Process Step"
-              buttonDisabled={props.isRunning}
-              topic="Add Process Step"
-            />
-
-            {props.isRunning ? (
+            {props.buttonDisabled ? (
               <Button
                 onClick={handlePause}
                 className="bg-yellow-300 hover:bg-yellow-200 w-88 text-black"
@@ -684,7 +664,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
             <Button
               onClick={props.onDelete}
               className="bg-red-300 hover:bg-red-200 w-88 text-black"
-              disabled={props.isRunning}
+              disabled={props.buttonDisabled}
             >
               Remove Process
             </Button>
@@ -1065,10 +1045,10 @@ export const ScadaFlowBuilder = ({ ...props }) => {
     console.log("Query status changed:", status);
     console.log("isLoading:", isLoading);
     console.log("isFetching:", isFetching);
-    if (process) {
-      console.log("process data:", process.flow);
+    if (process && process.flow) {
       setEdges(process.flow.edges);
       setNodes(process.flow.nodes);
+      console.log(process.flow.nodes)
     }
     if (isError) {
       console.error("Error details:", error);
@@ -1125,9 +1105,11 @@ export const ScadaFlowBuilder = ({ ...props }) => {
         onSubmit={(d: any) => props.onSubmit(d)}
         drawerDescription="Add a new process step to the system."
         drawerTitle="Add New Process Step"
-        buttonDisabled={props.isRunning}
+        buttonDisabled={props.buttonDisabled}
         topic="Add Process Step"
         setIsRunning={(d) => props.setIsRunning(d)}
+        setNodes={(d) => setNodes(d)}
+        setEdges={(d) => setEdges(d)}
         onDelete={() => props.onDelete()}
         pageId={props.pageId}
         sensorOpt={props.sensorOpt}

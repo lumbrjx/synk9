@@ -29,7 +29,7 @@ export class GlobalProcessConsumer extends WorkerHost {
 			relations: ['steps', 'steps.rules', 'steps.rules.sensor', 'agent'],
 		});
 
-		if (!process || !process.steps?.length) {
+		if (!process || !process.flow) {
 			this.logger.error(`❌ Invalid or empty process for id: ${id}`);
 			throw new Error(`Invalid or empty process for id ${id}`);
 		}
@@ -39,66 +39,49 @@ export class GlobalProcessConsumer extends WorkerHost {
 		let currentStepIndex = 0;
 		let matchedRules = new Set<string>();
 		let resolveKill: () => void;
+		const sensorsList: string[] = [];
+		const processFlow = process.flow
+		if (!processFlow.nodes.length) {
+			throw new Error("Needs process flow edges");
+		}
+		const flowNodes = processFlow.nodes;
+		for (const edge of flowNodes) {
+			const sensors = edge.data.sensor as any;
+			console.log(sensors)
+			if (sensors.length) {
+				for (const sensor of sensors) {
+					sensorsList.push(sensor.sensor_id);
+				}
+			}
+		}
 		const killPromise = new Promise<void>((resolve) => {
 			resolveKill = resolve;
 		});
 		const sensorSubscription = this.eventBus.on('sensor:process-state-updated').subscribe((data) => {
 			if (data.agentId !== agentId) return;
 
+			console.log(" from sensor", data.sensor_id);
 			this.logger.debug(`📡 Received sensor update: ${data.label} = ${data.value}`);
 
-			const currentStep = process.steps[currentStepIndex];
-			if (!currentStep) {
-				this.logger.warn(`⚠️ No step found at index ${currentStepIndex} for process ${id}`);
-				return;
+			console.log("edges:", flowNodes);
+			for (const edge of flowNodes) {
+				const sensors = edge.data.sensor;
+				console.log(sensors)
+				if (sensors.length) {
+					for (const sensor of sensors) {
+						if (sensor.sensor_id === data.sensor_id) {
+							sensor.sensorValue = data.value;
+						}
+					}
+				}
 			}
-
 
 			this.eventBus.emit('step:running', {
 				id,
 				agentId,
-				steps: process.steps.map((step, index) => ({
-					stepId: step.id,
-					status:
-						index < currentStepIndex
-							? 'success'
-							: index === currentStepIndex
-								? 'running'
-								: 'pending',
-				})),
+				data: { processId: process.id, nodes: flowNodes, edges: processFlow.edges }
 			});
 
-			this.logger.log(`🔄 Step ${currentStepIndex + 1} running (ID: ${currentStep.id})`);
-
-			let matchedRule: any = undefined;
-			for (const r of currentStep.rules) {
-				if (r.sensor.name === data.label && Number(r.expectedValue) === Number(data.value)) {
-					matchedRule = r;
-					break;
-				}
-			}
-
-			if (matchedRule) {
-				this.logger.log(`✅ Rule matched for sensor "${data.label}"`);
-				matchedRules.add(data.label);
-
-				const allMatched = currentStep.rules.every(r => matchedRules.has(r.sensor.name));
-				if (allMatched) {
-					this.logger.log(`✅✅ Step ${currentStepIndex + 1} passed (ID: ${currentStep.id})`);
-					this.eventBus.emit('step:valid', { id, stepId: currentStep.id, agentId });
-
-					currentStepIndex++;
-					matchedRules = new Set();
-
-					if (currentStepIndex >= process.steps.length) {
-						this.logger.log(`🎉 All steps completed for process ${id}. Restarting cycle...`);
-						this.eventBus.emit('process:cycle-done', { id, agentId });
-						currentStepIndex = 0;
-					}
-				}
-			} else {
-				this.logger.debug(`❌ Rule not matched for "${data.label}" = ${data.value}`);
-			}
 		});
 
 		const killSubscription = this.eventBus.on('process:kill').subscribe(async (data) => {
