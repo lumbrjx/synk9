@@ -556,6 +556,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
     setNodeProps(updatedProps);
   }
   const [nodeProps, setNodeProps] = useState(selectedNode?.data || {});
+  const [nodeSensors, setNodeSensors] = useState();
   const handleStart = () => {
     props.setIsRunning(true);
     console.log("Process started");
@@ -578,6 +579,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
       }
     };
 
+
     const handleMessage = (message: any) => {
       console.log("i got maee", message);
       try {
@@ -585,10 +587,22 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
         const [_eventType, data]: any = Object.entries(message)[0];
         if (data.id !== props.pageId) return;
         console.log("data", data)
+        console.log("node propssss", selectedNode);
+
 
         if (!data?.data) return;
-        props.setEdges(data.data.edges);
-        props.setNodes(data.data.nodes);
+        for (const node of data.data.nodes) {
+          console.log("this nodess", node.id, selectedNode.id);
+          if (node.id === selectedNode.id) {
+            const nodeSensors = node.data.sensor;
+            setNodeSensors({ [selectedNode.id]: nodeSensors });
+          }
+        };
+
+
+
+        // props.setEdges(data.data.edges);
+        // props.setNodes(data.data.nodes);
 
       } catch (err) {
         console.error('Failed to parse log message:', err);
@@ -602,7 +616,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
       socket.off("agent-disconnected", handleDiscon)
       socket.off('step-data', handleMessage);
     };
-  }, [socket]);
+  }, [socket, selectedNode]);
 
 
   const handleChange = (e) => {
@@ -676,7 +690,48 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
       </div>
     );
   }
+  const renderSensorFields = () => {
+    console.log("nodessss", nodeSensors);
+    return (
+      <>
+        {nodeSensors && nodeSensors[selectedNode.id] && nodeSensors[selectedNode.id].map((sensor, index) => (
+          <div key={sensor.sensor_id} className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Sensor {index + 1}: {sensor.sensor_id}
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                value={sensor.sensorValue}
+                onChange={(e) => {
+                  const newValue = parseFloat(e.target.value) || 0;
+                  const updatedSensors = [...nodeSensors];
+                  updatedSensors[index] = {
+                    ...sensor,
+                    sensorValue: newValue
+                  };
 
+                  // Update the node properties with the new sensor values
+                  const newProps = {
+                    ...updatedProps,
+                    sensor: updatedSensors
+                  };
+
+                  setNodeProps(newProps);
+                }}
+                placeholder="Sensor Value"
+              />
+              <span className="text-sm text-gray-500">Value</span>
+            </div>
+          </div>
+        ))}
+        {nodeSensors && nodeSensors.length === 0 && (
+          <div className="text-sm text-gray-500 py-2">No sensors available for this node.</div>
+        )}
+      </>
+    );
+  }
   // Render different property fields based on node type
   const renderPropertyFields = () => {
 
@@ -902,6 +957,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
       </div>
 
       {renderPropertyFields()}
+      {renderSensorFields()}
     </div>
   );
 };
@@ -971,6 +1027,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
   );
 
   const onNodeClick = useCallback((_, node) => {
+    console.log("i got clicked", node);
     setSelectedNode(node);
   }, []);
 
