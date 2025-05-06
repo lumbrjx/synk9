@@ -5,12 +5,10 @@ import ReactFlow, {
   Position,
   useNodesState,
   useEdgesState,
-  ReactFlowProvider,
   ConnectionLineType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Save, AlertCircle, RotateCcw, RotateCw } from 'lucide-react';
-import { CustomDrawer } from './custom-drawer';
+import { Save, AlertCircle, } from 'lucide-react';
 import { Button } from './button';
 import { socket } from '@/App';
 import { toast } from 'sonner';
@@ -18,11 +16,17 @@ import BusIcon from './pumpicon';
 import { Rule, RulesInput } from './custom-adder';
 import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { useAxiosMutation } from '@/hooks/mutate';
-import { create, update } from '@/mutations/agent';
+import { update } from '@/mutations/agent';
 import { queryClient } from '@/main';
-import { z } from 'zod';
 import { useAxiosQuery } from '@/hooks/get';
 import { query } from '@/queries/agent';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select"
 
 // Helper function to adjust handle positions based on node rotation
 const rotationAdjustedPosition = (originalPosition, rotation) => {
@@ -42,7 +46,6 @@ const rotationAdjustedPosition = (originalPosition, rotation) => {
 };
 
 const TankNode = ({ data, isConnectable }) => {
-  // Default rotation is 0
   const rotation = data.rotation || 0;
   const rotationStyle = { transform: `rotate(${rotation}deg)` };
 
@@ -62,7 +65,7 @@ const TankNode = ({ data, isConnectable }) => {
               fill="#2D3748" stroke="#9CA3AF" strokeWidth="2" />
             {/* Tank level */}
             <path
-              d={`M15,${90 - (data.level || 0) * 70} L15,80 Q15,90 25,90 L55,90 Q65,90 65,80 L65,${90 - (data.level || 0) * 70}`}
+              d={`M15,${90 - (data.level + 0.05 || 0) * 70} L15,80 Q15,90 25,90 L55,90 Q65,90 65,80 L65,${90 - (data.level + 0.05 || 0) * 70}`}
               fill={data.status === 'warning' ? '#FBBF24' : data.status === 'error' ? '#EF4444' : '#60A5FA'}
               fillOpacity="0.8"
             />
@@ -306,7 +309,6 @@ const MotorNode = ({ data, isConnectable }) => {
             className="mr-1 p-1 rounded "
           >
           </button>
-          <div className="text-xs text-gray-300">{data.rpm ? `${data.rpm} RPM` : data.status || 'stopped'}</div>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -545,7 +547,7 @@ const Sidebar = ({ onDragStart }) => {
 };
 
 // Properties panel component
-const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
+const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps, selectedNode, onNodeUpdate, ...props }) => {
   const [rules, setRules] = useState<Rule[]>([])
   const handleRulesChange = (newRules: Rule[]) => {
     setRules(newRules)
@@ -555,8 +557,15 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
     };
     setNodeProps(updatedProps);
   }
-  const [nodeProps, setNodeProps] = useState(selectedNode?.data || {});
-  const [nodeSensors, setNodeSensors] = useState();
+  const [_propField, setPropField] = useState([])
+  const handlePropFieldChange = (props) => {
+    setPropField(props)
+    const updatedProps = {
+      ...nodeProps,
+      "propSensors": props
+    };
+    setNodeProps(updatedProps);
+  }
   const handleStart = () => {
     props.setIsRunning(true);
     console.log("Process started");
@@ -569,70 +578,13 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
     socket.emit("command", JSON.stringify({ command: "PAUSE-PROCESS", data: { id: props.pageId } }))
   };
 
-  useEffect(() => {
-    const handleDiscon = () => {
-      toast.error("Lost connection to agent..");
-      props.setIsRunning(false);
-      try {
-      } catch (err) {
-        console.error('Failed to parse log message:', err);
-      }
-    };
-
-
-    const handleMessage = (message: any) => {
-      console.log("i got maee", message);
-      try {
-        // Extract the first (and only) key dynamically
-        const [_eventType, data]: any = Object.entries(message)[0];
-        if (data.id !== props.pageId) return;
-        console.log("data", data)
-        console.log("node propssss", selectedNode);
-
-
-        if (!data?.data) return;
-        for (const node of data.data.nodes) {
-          console.log("this nodess", node.id, selectedNode.id);
-          if (node.id === selectedNode.id) {
-            const nodeSensors = node.data.sensor;
-            setNodeSensors({ [selectedNode.id]: nodeSensors });
-          }
-        };
-
-
-
-        // props.setEdges(data.data.edges);
-        // props.setNodes(data.data.nodes);
-
-      } catch (err) {
-        console.error('Failed to parse log message:', err);
-      }
-    };
-
-    socket.on("agent-disconnected", handleDiscon)
-    socket.on('step-data', handleMessage);
-
-    return () => {
-      socket.off("agent-disconnected", handleDiscon)
-      socket.off('step-data', handleMessage);
-    };
-  }, [socket, selectedNode]);
-
-
   const handleChange = (e) => {
     const { name, value, type } = e.target;
     let processedValue = value;
 
-    console.log(name, value, type)
-
     if (type === 'number') {
       processedValue = parseFloat(value);
       if (isNaN(processedValue)) processedValue = 0;
-
-      // Apply constraints based on property name
-      if (name === 'level') {
-        processedValue = Math.max(0, Math.min(1, processedValue));
-      }
     }
 
     const updatedProps = {
@@ -648,28 +600,28 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
   };
 
   const handleSave = () => {
+    console.log("im the props", nodeProps);
     onNodeUpdate(selectedNode.id, nodeProps);
   };
-  console.log("immmm", props.buttonDisabled)
   if (!selectedNode) {
     return (
 
-      <div className=" border-l p-4">
-        <div className='py-11 flex flex-col justify-between p-4 text-white '>
+      <div className="w-88 border-l border-gray-700">
+        <div className=' flex flex-col justify-between p-4 text-white '>
           <h2 className='text-xl mb-4'>Sidebar</h2>
 
-          <div className="w-full flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
             {props.buttonDisabled ? (
               <Button
                 onClick={handlePause}
-                className="bg-yellow-300 hover:bg-yellow-200 w-88 text-black"
+                className="bg-yellow-300 hover:bg-yellow-200 text-black"
               >
                 Pause Process
               </Button>
             ) : (
               <Button
                 onClick={handleStart}
-                className="bg-green-300 hover:bg-green-200 w-88 text-black"
+                className="bg-green-300 hover:bg-green-200 text-black"
               >
                 Start Process
               </Button>
@@ -677,7 +629,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
 
             <Button
               onClick={props.onDelete}
-              className="bg-red-300 hover:bg-red-200 w-88 text-black"
+              className="bg-red-300 hover:bg-red-200 text-black"
               disabled={props.buttonDisabled}
             >
               Remove Process
@@ -685,8 +637,8 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
           </div>
         </div>
 
-        <h3 className="font-bold text-gray-200 mb-4">Properties</h3>
-        <p className="text-gray-400 text-sm">Select a component to edit its properties</p>
+        <h3 className="ps-4 pt-12 font-bold text-gray-200 mb-4">Properties</h3>
+        <p className="ps-4 text-gray-400 text-sm">Select a component to edit its properties</p>
       </div>
     );
   }
@@ -697,7 +649,7 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
         {nodeSensors && nodeSensors[selectedNode.id] && nodeSensors[selectedNode.id].map((sensor, index) => (
           <div key={sensor.sensor_id} className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sensor {index + 1}: {sensor.sensor_id}
+              Sensor {index + 1}: {sensor.name}
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -714,7 +666,6 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
 
                   // Update the node properties with the new sensor values
                   const newProps = {
-                    ...updatedProps,
                     sensor: updatedSensors
                   };
 
@@ -733,24 +684,30 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
     );
   }
   // Render different property fields based on node type
-  const renderPropertyFields = () => {
+  const renderPropertyFields = (sensors: any) => {
 
     switch (selectedNode.type) {
       case 'tank':
         return (
           <>
             <div className="flex flex-col gap-2">
-              <label className="text-sm text-gray-300">Fill Level (0-1)</label>
-              <input
-                name="level"
-                type="number"
-                min="0"
-                max="1"
-                step="0.1"
-                value={nodeProps.level || 0}
-                onChange={handleChange}
-                className="border border-gray-700 rounded-md p-2 text-gray-200"
-              />
+              <label className="text-sm text-gray-300">Fill Level sensor</label>
+              <Select
+                name='level'
+                onValueChange={(d) => handlePropFieldChange({ tank_level_sensor: d })}
+                defaultValue={''}
+              >
+                <SelectTrigger className="text-purple-100 w-full">
+                  <SelectValue placeholder={"temperature sensor"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sensors?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-300">Status</label>
@@ -792,19 +749,6 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
                 ))}
               </div>
             </div>
-            {selectedNode.type === 'motor' && (
-              <div className="flex flex-col gap-2">
-                <label className="text-sm text-gray-300">RPM</label>
-                <input
-                  name="rpm"
-                  type="number"
-                  min="0"
-                  value={nodeProps.rpm || 0}
-                  onChange={handleChange}
-                  className="border border-gray-700 rounded-md p-2 text-gray-200"
-                />
-              </div>
-            )}
           </>
         );
       case 'valve':
@@ -916,49 +860,51 @@ const PropertiesPanel = ({ selectedNode, onNodeUpdate, ...props }) => {
         return null;
     }
   };
+  console.log("is me dis", props.buttonDisabled);
 
 
   return (
-    <div className="w-72 border-l border-gray-700 p-4 flex flex-col gap-4 overflow-y-auto">
+    <div className="w-88 border-l border-gray-700 p-4 flex flex-col gap-4 overflow-y-auto">
       <div className="flex justify-between items-center">
         <h3 className="font-bold text-gray-200">Properties</h3>
-        <button
+        {!props.buttonDisabled && <button
           onClick={handleSave}
           className="flex items-center gap-1 text-white px-3 py-1 rounded-md text-sm"
         >
           <Save size={14} />
           Apply
-        </button>
+        </button>}
       </div>
 
-      <div className="flex flex-col gap-2">
-        <label className="text-sm text-gray-300">Label</label>
-        <input
-          name="label"
-          value={nodeProps.label || ''}
-          onChange={handleChange}
-          className="border border-gray-700 rounded-md p-2 text-gray-200"
-        />
-      </div>
+      {!Boolean(props.buttonDisabled) && <>
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-gray-300">Label</label>
+          <input
+            name="label"
+            value={nodeProps.label || ''}
+            onChange={handleChange}
+            className="border border-gray-700 rounded-md p-2 text-gray-200"
+          />
+        </div>
 
-      <div className="flex flex-col gap-2">
-        <RulesInput
-          value={rules || []}
-          onChange={handleRulesChange}
-          sensorOptions={props.sensorOpt || []}
-        />
-        <label className="text-sm text-gray-300 text-white">kwadrado</label>
-        <input
-          name="kwadrado"
-          value={nodeProps.kwadrado || ''}
-          onChange={handleChange}
-          className="border border-gray-700 rounded-md p-2 "
-        />
-      </div>
+        <div className="flex flex-col gap-2">
+          <RulesInput
+            value={rules || []}
+            onChange={handleRulesChange}
+            sensorOptions={props.sensorOpt || []}
+          />
+          <label className="text-sm text-gray-300 text-white">Note</label>
+          <input
+            name="note"
+            value={nodeProps.note || ''}
+            onChange={handleChange}
+            className="border border-gray-700 rounded-md p-2 "
+          />
+        </div></>}
 
-      {renderPropertyFields()}
+      {!Boolean(props.buttonDisabled) && renderPropertyFields(props.sensorOpt)}
       {renderSensorFields()}
-    </div>
+    </div >
   );
 };
 
@@ -1067,6 +1013,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
 
   const saveFlow = () => {
     const flow = { nodes, edges };
+    console.log("to save", flow)
     createMutation.mutate(flow);
   };
 
@@ -1111,35 +1058,115 @@ export const ScadaFlowBuilder = ({ ...props }) => {
       console.error("Error details:", error);
     }
   }, [status, isLoading, isFetching, process, isError, error]);
+
+  const [nodeProps, setNodeProps] = useState((selectedNode as any)?.data || {});
+  const [nodeSensors, setNodeSensors] = useState();
+  useEffect(() => {
+    const handleDiscon = () => {
+      toast.error("Lost connection to agent..");
+      props.setIsRunning(false);
+      try {
+      } catch (err) {
+        console.error('Failed to parse log message:', err);
+      }
+    };
+
+
+    const handleSpecialSensorData = (id: any, sensor: any) => {
+
+      console.log("JDIDDDDDD", sensor);
+      for (const key of Object.keys(sensor) as Array<keyof typeof sensor>) {
+        switch (key) {
+          case "tank_level_sensor":
+            const calculatedLevel = Math.max(0, Math.min(1, sensor[key].sensorValue));
+            const updatedProps = {
+              ...nodeProps,
+              level: calculatedLevel
+            };
+            setNodeProps(updatedProps);
+            onNodeUpdate(id, {
+              ...nodeProps,
+              level: calculatedLevel
+            });
+
+            console.log("Temperature:", calculatedLevel);
+            break;
+          default:
+            console.log("Unknown key:", key);
+            break;
+        }
+      }
+
+
+    }
+    const handleMessage = (message: any) => {
+      console.log("HADI JDIDA", message);
+      try {
+        // Extract the first (and only) key dynamically
+        const [_eventType, data]: any = Object.entries(message)[0];
+        if (data.id !== props.pageId) return;
+
+        if (!data?.data) return;
+        for (const node of data.data.nodes) {
+          if (node.data.propSensors) {
+            handleSpecialSensorData(node.id, node.data.propSensors);
+          }
+          console.log("this nodess", node.id, (selectedNode as any)?.id);
+          if (node.id === (selectedNode as any)?.id) {
+            const nodeSensors = node.data.sensor;
+            setNodeSensors({ [(selectedNode as any)?.id]: nodeSensors } as any);
+          }
+        };
+
+
+
+        // props.setEdges(data.data.edges);
+        // props.setNodes(data.data.nodes);
+
+      } catch (err) {
+        console.error('Failed to parse log message:', err);
+      }
+    };
+
+    socket.on("agent-disconnected", handleDiscon)
+    socket.on('step-data', handleMessage);
+
+    return () => {
+      socket.off("agent-disconnected", handleDiscon)
+      socket.off('step-data', handleMessage);
+    };
+  }, [socket, selectedNode]);
+
   return (
     <div className="flex text-gray-200">
       <ScrollArea>
-        <Sidebar onDragStart={onDragStart} />
+        {!props.buttonDisabled && <Sidebar onDragStart={onDragStart} />}
       </ScrollArea>
 
 
-      <div className="flex-1 flex flex-col" ref={reactFlowWrapper}>
+      <div className="flex-1 flex flex-col h-240" ref={reactFlowWrapper}>
         <div className="p-3 border-b border-gray-700 flex justify-between ">
           <h3 className="text-lg font-medium text-gray-200">SCADA System Designer</h3>
           <div className="flex gap-2">
-            <button
+            {!props.buttonDisabled && <button
               onClick={saveFlow}
               className="flex items-center gap-1 text-white px-3 py-1 rounded-md text-sm"
             >
               <Save size={16} />
               Save Configuration
-            </button>
+            </button>}
           </div>
         </div>
 
         <ReactFlow
+          className='h-240'
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
-          onInit={setReactFlowInstance}
+          onInit={setReactFlowInstance as any}
           onDrop={onDrop}
           onDragOver={onDragOver}
           onNodeClick={onNodeClick}
@@ -1154,6 +1181,10 @@ export const ScadaFlowBuilder = ({ ...props }) => {
       </div>
 
       <PropertiesPanel
+        nodeSensors={nodeSensors}
+        setNodeSensors={setNodeSensors}
+        nodeProps={nodeProps}
+        setNodeProps={setNodeProps}
         selectedNode={selectedNode}
         onNodeUpdate={onNodeUpdate}
         formSchema={props.formSchema}

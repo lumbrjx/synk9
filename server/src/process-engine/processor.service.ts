@@ -65,15 +65,33 @@ export class GlobalProcessConsumer extends WorkerHost {
 
 			console.log("edges:", flowNodes);
 			for (const edge of flowNodes) {
-				const sensors = edge.data.sensor;
-				console.log(sensors)
+				const sensors = edge.data.sensor || [];
+
+				const specialSensor = edge.data.propSensors || {};
+				console.log("khf", specialSensor)
 				if (sensors.length) {
 					for (const sensor of sensors) {
 						if (sensor.sensor_id === data.sensor_id) {
 							sensor.sensorValue = data.value;
+							sensor.name = data.label;
 						}
 					}
 				}
+
+				if (specialSensor && Object.keys(specialSensor).length > 0) {
+					console.log("heeeeeeeyyyyyyyyyy")
+					for (const [key, sensor_id] of Object.entries(specialSensor)) {
+						console.log("of d", sensor_id, data.sensor_id)
+						if (sensor_id === data.sensor_id) {
+							specialSensor[key] = {
+								sensor_id,
+								sensorValue: data.value,
+								name: data.label,
+							};
+						}
+					}
+				}
+
 			}
 
 			this.eventBus.emit('step:running', {
