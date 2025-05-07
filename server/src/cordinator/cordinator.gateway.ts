@@ -89,7 +89,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		await this.notifyClients("process:cycle-done", payload, 'step-data');
 	}
 	async stepRunning(payload: any) {
-		 this.logger.log('Step Running:', payload.data.nodes[0].data);
+		 // this.logger.log('Step Running:', payload.data.nodes[0].data);
 		await this.notifyClients("step:running", payload, 'step-data');
 	}
 	async sensorDeleted(payload: any) {
@@ -158,9 +158,9 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			return;
 		}
 		if (parsedData.command === "START-PROCESS") {
-			console.log("startrtetewtsatasdtast")
+			console.log("startrtetewtsatasdtast", process.id);
 			this.eventBus.emit("process:created", { id: process?.id, agentId: process?.agent.id })
-			this.processService.updateState(process.id, ProcessState.running);
+			this.processService.updateState(process?.id, ProcessState.running);
 			return;
 		}
 	}

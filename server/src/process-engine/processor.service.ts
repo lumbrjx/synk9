@@ -176,7 +176,7 @@ export class GlobalProcessService {
 						sensor.name = data.label;
 
 						if (specialSensor.counter_sensor !== undefined) {
-							specialSensor.counter_sensor= {
+							specialSensor.counter_sensor = {
 								sensor_id: sensor.sensor_id,
 								sensorValue: data.value,
 								name: data.label,

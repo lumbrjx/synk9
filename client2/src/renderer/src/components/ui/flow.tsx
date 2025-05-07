@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select"
+import { generateRandomString } from '@/lib/helpers';
 
 // Helper function to adjust handle positions based on node rotation
 const rotationAdjustedPosition = (originalPosition, rotation) => {
@@ -529,6 +530,7 @@ const Sidebar = ({ onDragStart }) => {
       <h3 className="font-bold text-gray-200 mb-4">SCADA Components</h3>
       <div className="space-y-6">
         {componentTypes.map((component, index) => {
+          console.log("INDEX", index)
           const NodeComponent = nodeTypes[component.type];
           return (
             <div
@@ -547,7 +549,7 @@ const Sidebar = ({ onDragStart }) => {
 };
 
 // Properties panel component
-const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps, selectedNode, onNodeUpdate, ...props }) => {
+const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodeProps, setNodeProps, selectedNode, onNodeUpdate, ...props }) => {
   const [rules, setRules] = useState<Rule[]>([])
   const handleRulesChange = (newRules: Rule[]) => {
     setRules(newRules)
@@ -601,7 +603,6 @@ const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps,
   };
 
   const handleSave = () => {
-    console.log("im the props", nodeProps);
     onNodeUpdate(selectedNode.id, nodeProps);
   };
   if (!selectedNode) {
@@ -910,6 +911,7 @@ const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps,
         </div>
 
         <div className="flex flex-col gap-2">
+          <label className="text-sm text-gray-300">Sensors</label>
           <RulesInput
             value={rules || []}
             onChange={handleRulesChange}
@@ -980,7 +982,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
       });
 
       const newNode = {
-        id: `${type}_${Date.now()}`,
+        id: `${type}_${Date.now()}_${generateRandomString(13)}`,
         type,
         position,
         data: {
@@ -1231,6 +1233,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
         nodeProps={nodeProps}
         setNodeProps={setNodeProps}
         selectedNode={selectedNode}
+        setSelectedNode={setSelectedNode}
         onNodeUpdate={onNodeUpdate}
         formSchema={props.formSchema}
         formFields={props.formFields}
