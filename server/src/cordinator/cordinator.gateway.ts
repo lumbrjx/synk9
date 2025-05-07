@@ -71,12 +71,9 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected") {
 		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
 
-		console.log("yesss")
 		for (const id of agentsIds) {
-			console.log(id)
 			const connection = await this.connectionStore.get(id);
-			const l = connection?.socket.emit(channel, { [event]: payload });
-			console.log(l)
+			connection?.socket.emit(channel, { [event]: payload });
 		}
 	}
 	async sensorUpdated(payload: any) {
@@ -92,7 +89,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		await this.notifyClients("process:cycle-done", payload, 'step-data');
 	}
 	async stepRunning(payload: any) {
-		this.logger.log('Step Running:', payload);
+		 this.logger.log('Step Running:', payload.data.nodes[0].data);
 		await this.notifyClients("step:running", payload, 'step-data');
 	}
 	async sensorDeleted(payload: any) {
@@ -138,7 +135,6 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		for (const process of agentId?.processes) {
 			this.eventBus.emit("process:kill", { id: process.id })
 			this.processService.updateState(process.id, ProcessState.stopped);
-			console.log("yesss")
 			await this.notifyClients("agent:disconnected", { processId: process.id }, 'agent-disconnected');
 		}
 		return;

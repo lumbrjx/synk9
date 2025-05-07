@@ -520,7 +520,7 @@ const Sidebar = ({ onDragStart }) => {
     { type: 'valve', label: 'Control Valve', initialData: { status: 'closed' } },
     { type: 'motor', label: 'Motor', initialData: { status: 'stopped', rpm: 0 } },
     { type: 'conveyor', label: 'Conveyor', initialData: { status: 'stopped' } },
-    { type: 'counter', label: 'Counter', initialData: { value: 0, unit: 'units' } },
+    { type: 'counter', label: 'Counter', initialData: { value: 5, unit: 'units' } },
     { type: 'sensor', label: 'Sensor', initialData: { status: 'inactive', value: 0, unit: 'C' } },
   ];
 
@@ -582,6 +582,7 @@ const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps,
     const { name, value, type } = e.target;
     let processedValue = value;
 
+    console.log("WAH WAH", name, value, type);
     if (type === 'number') {
       processedValue = parseFloat(value);
       if (isNaN(processedValue)) processedValue = 0;
@@ -690,6 +691,7 @@ const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps,
       case 'tank':
         return (
           <>
+
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-300">Fill Level sensor</label>
               <Select
@@ -709,6 +711,17 @@ const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps,
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-gray-300">Max Tank Level (cm)</label>
+              <input
+                name="tank_max_level"
+                type='number'
+                value={nodeProps.tank_max_level || 300}
+                onChange={handleChange}
+                className="border border-gray-700 rounded-md p-2 text-gray-200"
+              />
+            </div>
+
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-300">Status</label>
               <div className="grid grid-cols-3 gap-2">
@@ -795,14 +808,23 @@ const PropertiesPanel = ({ nodeSensors, setNodeSensors, nodeProps, setNodeProps,
         return (
           <>
             <div className="flex flex-col gap-2">
-              <label className="text-sm text-gray-300">Value</label>
-              <input
-                name="value"
-                type="number"
-                value={nodeProps.value || 0}
-                onChange={handleChange}
-                className="border border-gray-700 rounded-md p-2 text-gray-200"
-              />
+              <label className="text-sm text-gray-300">Value Sensor</label>
+              <Select
+                name='value'
+                onValueChange={(d) => handlePropFieldChange({ counter_sensor: d })}
+                defaultValue={''}
+              >
+                <SelectTrigger className="text-purple-100 w-full">
+                  <SelectValue placeholder={"counter sensor"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sensors?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-300">Unit</label>
@@ -1072,33 +1094,56 @@ export const ScadaFlowBuilder = ({ ...props }) => {
     };
 
 
-    const handleSpecialSensorData = (id: any, sensor: any) => {
-
-      console.log("JDIDDDDDD", sensor);
-      for (const key of Object.keys(sensor) as Array<keyof typeof sensor>) {
-        switch (key) {
-          case "tank_level_sensor":
-            const calculatedLevel = Math.max(0, Math.min(1, sensor[key].sensorValue));
-            const updatedProps = {
-              ...nodeProps,
-              level: calculatedLevel
-            };
-            setNodeProps(updatedProps);
-            onNodeUpdate(id, {
-              ...nodeProps,
-              level: calculatedLevel
-            });
-
-            console.log("Temperature:", calculatedLevel);
-            break;
-          default:
-            console.log("Unknown key:", key);
-            break;
-        }
+    const calculateTankLevel = (rawValue, minValue = 0, maxValue = 100) => {
+      // Ensure minValue is less than maxValue
+      if (minValue >= maxValue) {
+        console.error("Min value must be less than max value");
+        return 0;
       }
 
+      // Calculate the normalized level (0-1)
+      const normalizedLevel = (rawValue - minValue) / (maxValue - minValue);
 
-    }
+      // Clamp the value between 0 and 1
+      const clampedLevel = Math.max(0, Math.min(1, normalizedLevel));
+
+      console.log(`Raw sensor value: ${rawValue}, Normalized: ${normalizedLevel.toFixed(4)}, Clamped: ${clampedLevel.toFixed(4)}`);
+
+      return clampedLevel;
+    };
+    const handleSpecialSensorData = (id: any, sensor: any, data: any) => {
+      console.log("Processing sensor data:", sensor);
+
+      // Create a single updates object to collect all changes
+      let updates = { ...nodeProps };
+      let updatesApplied = false;
+
+      // Check for specific sensor types directly
+      if (sensor.tank_level_sensor !== undefined) {
+        const rawValue = sensor.tank_level_sensor.sensorValue;
+        const calculatedLevel = calculateTankLevel(rawValue, 0, data.tank_max_level);
+        console.log("Tank level:", rawValue, "→ Calculated:", data.tank_max_level);
+
+        updates.level = calculatedLevel;
+        updatesApplied = true;
+      }
+
+      if (sensor.counter_sensor !== undefined) {
+        const counterValue = sensor.counter_sensor.sensorValue;
+        console.log("Counter value:", counterValue);
+
+        updates.value = counterValue;
+        updatesApplied = true;
+      }
+
+      // Apply updates only if changes were made
+      if (updatesApplied) {
+        console.log(`Updating node ${id} with:`, updates);
+        setNodeProps(updates);
+        onNodeUpdate(id, updates);
+      }
+    };
+
     const handleMessage = (message: any) => {
       console.log("HADI JDIDA", message);
       try {
@@ -1109,7 +1154,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
         if (!data?.data) return;
         for (const node of data.data.nodes) {
           if (node.data.propSensors) {
-            handleSpecialSensorData(node.id, node.data.propSensors);
+            handleSpecialSensorData(node.id, node.data.propSensors, node.data);
           }
           console.log("this nodess", node.id, (selectedNode as any)?.id);
           if (node.id === (selectedNode as any)?.id) {
