@@ -31,7 +31,7 @@ export class Process {
 	@OneToMany(() => ProcessStep, step => step.process, { cascade: true })
 	steps: ProcessStep[];
 
-	@ManyToOne(() => Agent, agent => agent.processes, { nullable: false, onDelete: 'RESTRICT' })
+	@ManyToOne(() => Agent, agent => agent.processes, { nullable: false, onDelete: 'RESTRICT'})
 	@JoinColumn({ name: 'agentId' })
 	agent: Agent
 

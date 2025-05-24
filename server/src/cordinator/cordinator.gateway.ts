@@ -17,6 +17,7 @@ import { AppEvents } from 'src/event-bus/event-bus.interface';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { ProcessService } from 'src/process/process.service';
 import { SyncService } from './sync.service';
+import { StreamManager } from 'src/process-engine/stream.service';
 
 @WebSocketGateway({ cors: true })
 export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -25,6 +26,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 
 	constructor(
 		private eventBus: EventBusService,
+		private streamManager: StreamManager,
 		private connectionStore: ConnectionStore,
 		private processService: ProcessService,
 		private agentService: AgentService,
@@ -89,7 +91,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		await this.notifyClients("process:cycle-done", payload, 'step-data');
 	}
 	async stepRunning(payload: any) {
-		 // this.logger.log('Step Running:', payload.data.nodes[0].data);
+		// this.logger.log('Step Running:', payload.data.nodes[0].data);
 		await this.notifyClients("step:running", payload, 'step-data');
 	}
 	async sensorDeleted(payload: any) {
@@ -145,7 +147,9 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	): Promise<void> {
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
 		const parsedData = JSON.parse(data)
-		const process = await this.processService.findOne(parsedData.id, ['steps', 'agent']) as Process
+		const process = await this.processService.findOne(parsedData.data.id, ['steps', 'agent']) as Process
+
+		console.log("i will", parsedData, process)
 		if (!process.flow) {
 			const socket = await this.connectionStore.get("your-jwt-token-here");
 			socket?.socket.emit("data", "Add process Steps first");
@@ -153,7 +157,8 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		};
 		if (parsedData.command === "PAUSE-PROCESS") {
 			// send destroy job signal
-			this.eventBus.emit("process:kill", { id: process.id })
+			// this.eventBus.emit("process:kill", { id: process.id })
+			const del = this.streamManager.deleteStream(process.id);
 			this.processService.updateState(process.id, ProcessState.stopped);
 			return;
 		}
@@ -167,7 +172,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 
 	@SubscribeMessage('monitoring_streamline')
 	async handleMessage(
-		@MessageBody() data: { key: string; value: any , sensor_id: string},
+		@MessageBody() data: { key: string; value: any, sensor_id: string },
 		@ConnectedSocket() client: Socket,
 	): Promise<void> {
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);

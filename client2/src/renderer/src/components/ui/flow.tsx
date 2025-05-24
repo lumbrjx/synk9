@@ -570,7 +570,7 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
   }
   const handleStart = () => {
     props.setIsRunning(true);
-    console.log("Process started");
+    console.log("Process started", props.pageId);
     socket.emit("command", JSON.stringify({ command: "START-PROCESS", data: { id: props.pageId } }))
   };
 

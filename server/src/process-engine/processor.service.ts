@@ -159,12 +159,9 @@ export class GlobalProcessService {
 			}
 		}
 
-		let resolveKill: () => void;
-		const killPromise = new Promise<void>((resolve) => {
-			resolveKill = resolve;
-		});
 
 		const sensorSubscription = this.eventBus.on('sensor:process-state-updated').subscribe((data) => {
+
 			if (data.agentId !== agentId) return;
 
 			for (const edge of flowNodes) {
@@ -191,16 +188,15 @@ export class GlobalProcessService {
 
 						}
 					}
-
 				}
+
+
+				this.eventBus.emit('step:running', {
+					id,
+					agentId,
+					data: { processId: process.id, nodes: flowNodes, edges: process.flow.edges },
+				});
 			}
-
-
-			this.eventBus.emit('step:running', {
-				id,
-				agentId,
-				data: { processId: process.id, nodes: flowNodes, edges: process.flow.edges },
-			});
 		});
 
 		const killSubscription = this.eventBus.on('process:kill').subscribe((data) => {
@@ -208,10 +204,8 @@ export class GlobalProcessService {
 			this.logger.warn(`🛑 Process ${id} was killed. Cleaning up...`);
 			sensorSubscription.unsubscribe();
 			killSubscription.unsubscribe();
-			resolveKill();
 		});
 
 		this.logger.log(`🧭 Process ${id} is now actively monitoring events.`);
-		await killPromise;
 	}
 }

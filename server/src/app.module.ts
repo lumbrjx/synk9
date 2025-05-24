@@ -14,11 +14,11 @@ import { ProcessEngineModule } from './process-engine/engine.module';
 		ConnectionModule,
 		ProcessModule,
 		AgentModule,
-		CordinatorModule,
 		EventBusModule,
 		SensorModule,
 		ConnectionStoreModule,
-		ProcessEngineModule
+		ProcessEngineModule,
+		CordinatorModule,
 	],
 	providers: [CordinatorGateway],
 	exports: [CordinatorGateway]
