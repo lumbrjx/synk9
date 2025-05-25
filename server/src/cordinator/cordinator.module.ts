@@ -8,7 +8,7 @@ import { SyncService } from './sync.service';
 @Global()
 @Module({
 	imports: [ConnectionModule, ProcessModule, AgentModule],
-	providers: [ConnectionStore, SyncService],
+	providers: [ConnectionStore, SyncService ],
 	exports: [ConnectionStore, SyncService]
 })
 export class CordinatorModule { }

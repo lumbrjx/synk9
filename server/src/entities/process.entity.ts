@@ -31,10 +31,15 @@ export class Process {
 	@OneToMany(() => ProcessStep, step => step.process, { cascade: true })
 	steps: ProcessStep[];
 
-	@ManyToOne(() => Agent, agent => agent.processes, { nullable: false, onDelete: 'RESTRICT' })
+	@ManyToOne(() => Agent, agent => agent.processes, { nullable: false, onDelete: 'RESTRICT'})
 	@JoinColumn({ name: 'agentId' })
 	agent: Agent
 
+	@Column({
+		type: "json",
+		default: null
+	})
+	flow: any
 	@DeleteDateColumn({ type: 'timestamp', nullable: true })
 	deletedAt?: Date;
 

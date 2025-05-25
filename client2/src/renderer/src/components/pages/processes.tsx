@@ -8,6 +8,7 @@ import { useAxiosQuery } from "@/hooks/get";
 import { query } from "@/queries/agent";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { queryClient } from "@/main";
 
 const formSchema = z.object({
   name: z.string().min(2),
@@ -73,6 +74,7 @@ export default function Processes() {
     options: {
       onSuccess: () => {
         toast.success("Process created successfully!");
+				queryClient.invalidateQueries({ queryKey: ['processes'] });
       },
       onError: (e) => {
         console.error("Create error", e);

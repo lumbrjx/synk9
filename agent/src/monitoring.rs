@@ -74,6 +74,7 @@ async fn process_single_sensor(
     println!("{} - Sensor {}: {}", timestamp, sensor.id, sensor_value);
 
     let modbus_data = plc_io::ModbusData {
+        sensor_id: sensor.id,
         time: timestamp,
         value: sensor_value,
         key: sensor.label,

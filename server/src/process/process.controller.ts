@@ -26,7 +26,10 @@ export class ProcessController {
 	update(@Param('id') id: string, @Body() updateProcessDto: UpdateProcessDto) {
 		return this.processService.update(id, updateProcessDto);
 	}
-
+	@Patch('flow/:id')
+	updateFlow(@Param('id') id: string, @Body() updateProcessDto: UpdateProcessDto) {
+		return this.processService.updateFlow(id, updateProcessDto);
+	}
 	@Delete(':id')
 	remove(@Param('id') id: string) {
 		return this.processService.remove(id);
