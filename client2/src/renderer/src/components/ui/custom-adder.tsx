@@ -8,10 +8,12 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { PlusCircle, Trash2 } from "lucide-react"
+import { Input } from "./input"
 
 // Define the Rule type
 export type Rule = {
   sensor_id: string
+  expectedValue?: string
 }
 
 // Define type for sensor options
@@ -21,6 +23,8 @@ export type SensorOption = {
 }
 
 type RulesInputProps = {
+  double?: boolean
+  withVal?: boolean
   value: Rule[]
   onChange: (rules: Rule[]) => void
   sensorOptions: SensorOption[]  // Available sensors for selection
@@ -28,6 +32,8 @@ type RulesInputProps = {
 }
 
 export const RulesInput = ({
+  double = false,
+  withVal = false,
   value = [],
   onChange,
   sensorOptions = [],
@@ -35,7 +41,7 @@ export const RulesInput = ({
 }: RulesInputProps) => {
   // Add a new empty rule
   const addRule = () => {
-    const newRules = [...value, { sensor_id: "" }]
+    const newRules = [...value, { sensor_id: "", expectedValue: "" }]
     onChange(newRules)
   }
 
@@ -52,6 +58,11 @@ export const RulesInput = ({
     newRules[index] = { ...newRules[index], sensor_id: newSensorId }
     onChange(newRules)
   }
+  const updateRuleValue = (index: number, newRule: string) => {
+    const newRules = [...value]
+    newRules[index] = { ...newRules[index], expectedValue: newRule }
+    onChange(newRules)
+  }
 
   return (
     <div className={`space-y-3 ${className}`}>
@@ -63,9 +74,9 @@ export const RulesInput = ({
             <div className="space-y-2">
               {value.map((rule, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <div className="flex-1  gap-2 min-w-0">
+                  <div className="w-full flex flex-row gap-2 min-w-0">
                     {/* Select dropdown for sensorId */}
-                    <Select
+                    {double === false && <Select
                       value={rule.sensor_id}
                       onValueChange={(newValue) => updateSensorId(index, newValue)}
                     >
@@ -77,10 +88,22 @@ export const RulesInput = ({
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
+
                         ))}
                       </SelectContent>
-                    </Select>
-
+                    </Select>}
+                    {double === true && <Input
+                      value={rule.sensor_id}
+                      onChange={(e) => updateSensorId(index, e.target.value)}
+                      placeholder="MemoryAddress"
+                      className="text-purple-100"
+                    />}
+                    {withVal && <Input
+                      value={rule.expectedValue}
+                      onChange={(e) => updateRuleValue(index, e.target.value)}
+                      placeholder="Final Value"
+                      className="text-purple-100"
+                    />}
                   </div>
                   <Button
                     type="button"

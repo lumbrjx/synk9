@@ -1,16 +1,12 @@
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../ui/button';
 import { useAxiosMutation } from "@/hooks/mutate";
-import FlowCanvas from '../ui/flows';
-import { CustomDrawer } from '../ui/custom-drawer';
 import { z } from 'zod';
 import { remove, create } from '@/mutations/agent';
 import { useAxiosQuery } from '@/hooks/get';
 import { query } from '@/queries/agent';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { socket } from '@/App';
 import { queryClient } from '@/main';
 import { ReactFlowProvider } from 'reactflow';
 import { ScadaFlowBuilder } from '../ui/flow';
@@ -83,10 +79,7 @@ export default function Details() {
     deleteMutation.mutate();
   };
 
-  const [step, setStep] = useState([]);
   const [proc, setProc] = useState();
-  const [sideView, setStepSideView] = useState(null);
-  const [flowStep, setFlowStep] = useState([]);
   const [availableSensors, setAvailableSensors] = useState([]);
   const [isRunning, setIsRunning] = useState(false); // <-- NEW STATE
   console.log("imrunninnngng", isRunning);
@@ -103,11 +96,10 @@ export default function Details() {
     queryFn: async () => {
       try {
         console.log("Fetching agents...");
-        const response = await query('/process/step/' + id);
         const response2 = await query('/sensor/process/' + id);
         const response3 = await query('/process/' + id);
         console.log("Fetch response:", response2);
-        return { response, response2, response3 };
+        return {  response2, response3 };
       } catch (e) {
         console.error("Fetch error:", e);
         throw e;
@@ -128,13 +120,9 @@ export default function Details() {
       setIsRunning(state)
       setProc(steps.response3);
     }
-    if (steps?.response) {
-      const filtered = steps.response.map((step: any) => ({ value: step.id, label: step.name }));
-      setStep(filtered);
-      setFlowStep(steps.response);
-    }
     if (steps?.response2) {
       const filtered = steps.response2.map((sensor: any) => ({ value: sensor.id, label: sensor.name }));
+      console.log("im the champ")
       setAvailableSensors(filtered);
     }
     if (isError) {

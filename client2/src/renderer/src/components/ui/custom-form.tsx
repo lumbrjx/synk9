@@ -28,11 +28,12 @@ import { useEffect } from "react"
 type FieldConfig = {
   name: string
   label: string
-  type: 'input' | 'select' | 'checkbox' | 'rules' | 'input-number'
+  type: 'input' | 'select' | 'checkbox' | 'rules' | 'input-number' | "double-input"
   placeholder?: string
   description?: string
   options?: { value: string; label: string }[] // For select fields
   sensorOptions?: SensorOption[] // For rules input - available sensors
+  withVal?: boolean,
 }
 
 type CustomFormProps = {
@@ -96,10 +97,23 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
             }}
           />
         )
+      case 'double-input':
+        return (
+          <>
+            <RulesInput
+              double={true}
+              withVal={field.withVal}
+              value={formField.value || []}
+              onChange={formField.onChange}
+              sensorOptions={field.sensorOptions || []}
+            />
+          </>
+        )
       case 'rules':
         return (
           <>
             <RulesInput
+              withVal={field.withVal}
               value={formField.value || []}
               onChange={formField.onChange}
               sensorOptions={field.sensorOptions || []}
@@ -121,7 +135,7 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="grid grid-cols-1 gap-6 max-h-96 overflow-y-auto p-2">
+        <div className="grid grid-cols-1 gap-6 max-h-150 overflow-y-auto p-2">
           {fields.map((field) => (
             <FormField
               key={field.name}

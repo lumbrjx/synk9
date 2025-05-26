@@ -38,7 +38,7 @@ export class StreamManager {
 
 		const process = await this.processRepository.findOne({
 			where: { id },
-			relations: ['steps', 'steps.rules', 'steps.rules.sensor', 'agent', 'agent.processes'],
+			relations: ['agent', 'agent.processes', "agent.alerts", "agent.alerts.rules"],
 		});
 
 		if (!process || !process.flow) {
@@ -46,6 +46,7 @@ export class StreamManager {
 			return;
 		}
 
+		const alerts = process.agent.alerts;
 		const flowNodes = process.flow.nodes;
 		const sensorsList: string[] = [];
 
@@ -59,7 +60,7 @@ export class StreamManager {
 		const subscription = stream.subscribe({
 			next: (data) => {
 				// Send to socket or process data
-				this.handleData(streamId, name, agentId, flowNodes, data, id, process);
+				this.handleData(streamId, name, agentId, flowNodes, data, id, process, alerts);
 			},
 			error: (error) => {
 				console.log(`Stream ${streamId} error:`, error);
@@ -122,7 +123,7 @@ export class StreamManager {
 	}
 
 	// Handle data from streams (customize this)
-	handleData(streamId, streamName, agentId, flowNodes, data, id, process) {
+	handleData(streamId, streamName, agentId, flowNodes, data, id, process, alerts) {
 		// This is where you'd send to socket
 		if (data.agentId !== agentId) return;
 
@@ -150,7 +151,22 @@ export class StreamManager {
 
 					}
 				}
+
 			}
+			for (const alert of alerts) {
+				console.log("im checkin")
+				for (const rule of alert.rules) {
+					if (rule.id === data.sensor_id && parseInt(rule.expectedValue) <= parseInt(data.value)) {
+						this.eventBus.emit('alert:alert', {
+							id,
+							agentId,
+							data: { processId: process.id, nodes: flowNodes, alert: alert},
+						});
+					}
+				}
+
+			}
+
 
 
 			this.eventBus.emit('step:running', {

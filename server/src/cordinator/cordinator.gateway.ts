@@ -43,6 +43,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.eventBus.on("process:cycle-done").subscribe(this.cycleDone.bind(this));
 		this.eventBus.on("sensor:updated").subscribe(this.sensorUpdated.bind(this));
 		this.eventBus.on("sensor:deleted").subscribe(this.sensorDeleted.bind(this));
+		this.eventBus.on("alert:alert").subscribe(this.dataAlert.bind(this));
 
 	}
 
@@ -70,7 +71,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		}
 	}
 
-	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected") {
+	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected" | "alert") {
 		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
 
 		for (const id of agentsIds) {
@@ -89,6 +90,10 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	async cycleDone(payload: any) {
 		this.logger.log('process Cycle Done:', payload);
 		await this.notifyClients("process:cycle-done", payload, 'step-data');
+	}
+	async dataAlert(payload: any) {
+		// this.logger.log('Step Running:', payload.data.nodes[0].data);
+		await this.notifyClients("alert:alert", payload, 'alert');
 	}
 	async stepRunning(payload: any) {
 		// this.logger.log('Step Running:', payload.data.nodes[0].data);
