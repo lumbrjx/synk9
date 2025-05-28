@@ -1,8 +1,8 @@
-"use client"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import { Button } from "@/components/ui/button"
+'use client'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -10,19 +10,19 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+  FormMessage
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { RulesInput, SensorOption } from "./custom-adder"
-import { useEffect } from "react"
+} from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
+import { RulesInput, SensorOption } from './custom-adder'
+import { useEffect } from 'react'
 
 // Enhanced field configuration with rules type and sensor options
 type FieldConfig = {
@@ -39,7 +39,7 @@ type FieldConfig = {
 type CustomFormProps = {
   formSchema: z.ZodObject<any>
   fields: FieldConfig[]
-  defaultValues: any,
+  defaultValues: any
   onSubmit: (values: any) => void
 }
 
@@ -49,21 +49,18 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
     defaultValues: defaultValues
   })
 
-  const { reset, } = form;
+  const { reset } = form
   useEffect(() => {
-    reset(defaultValues);
-  }, [defaultValues, reset]);
+    reset(defaultValues)
+  }, [defaultValues, reset])
 
-  console.log("Form errors:", form.formState.errors)
+  console.log('Form errors:', form.formState.errors)
   // Function to render the appropriate form control based on field type
   const renderFieldControl = (field: FieldConfig, formField: any) => {
     switch (field.type) {
       case 'select':
         return (
-          <Select
-            onValueChange={formField.onChange}
-            defaultValue={formField.value}
-          >
+          <Select onValueChange={formField.onChange} defaultValue={formField.value}>
             <SelectTrigger className="text-purple-100 w-full">
               <SelectValue placeholder={field.placeholder} />
             </SelectTrigger>
@@ -90,10 +87,11 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
             className="text-purple-100"
             type="number"
             placeholder={field.placeholder}
+            value={formField.value === undefined ? '' : formField.value}
             onChange={(e) => {
               // Parse to number or undefined if empty
-              const value = e.target.value === '' ? undefined : parseFloat(e.target.value);
-              formField.onChange(value);
+              const value = e.target.value === '' ? undefined : parseFloat(e.target.value)
+              formField.onChange(value)
             }}
           />
         )
@@ -122,13 +120,7 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
         )
       case 'input':
       default:
-        return (
-          <Input
-            className="text-purple-100"
-            placeholder={field.placeholder}
-            {...formField}
-          />
-        )
+        return <Input className="text-purple-100" placeholder={field.placeholder} {...formField} />
     }
   }
 
@@ -145,11 +137,11 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
                 <FormItem className="flex flex-col">
                   <FormLabel className="text-purple-100 text-lg">{field.label}</FormLabel>
 
-                  <FormControl>
-                    {renderFieldControl(field, formField)}
-                  </FormControl>
+                  <FormControl>{renderFieldControl(field, formField)}</FormControl>
                   {field.description && (
-                    <FormDescription className="text-sm text-purple-100/70">{field.description}</FormDescription>
+                    <FormDescription className="text-sm text-purple-100/70">
+                      {field.description}
+                    </FormDescription>
                   )}
 
                   <FormMessage />
@@ -159,7 +151,9 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
           ))}
         </div>
         <div className="w-full flex justify-center mt-6">
-          <Button type="submit" className="bg-purple-200 hover:bg-purple-300 w-88 text-black">Submit</Button>
+          <Button type="submit" className="bg-purple-200 hover:bg-purple-300 w-88 text-black">
+            Submit
+          </Button>
         </div>
       </form>
     </Form>
