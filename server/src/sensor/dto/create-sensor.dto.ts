@@ -7,11 +7,8 @@ export class CreateSensorDto {
 	@IsString()
 	description: string;
 
-	@IsNumber()
-	start_register: number;
-
-	@IsNumber()
-	end_register: number;
+	@IsString()
+	register: string;
 
 	@IsString()
 	agentId: string;

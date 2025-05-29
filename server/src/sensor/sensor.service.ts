@@ -6,6 +6,7 @@ import { Process, Sensor } from 'src/entities';
 import { In, Repository } from 'typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { AgentService } from 'src/agent/agent.service';
+import { ParsersService } from 'src/parsers/parsers.service';
 
 @Injectable()
 export class SensorService {
@@ -16,11 +17,17 @@ export class SensorService {
 		@InjectRepository(Process)
 		private processReposistory: Repository<Process>,
 		private eventBus: EventBusService,
-		private agentService: AgentService
+		private agentService: AgentService,
+		private parserService: ParsersService
 	) { }
 
 	async create(createSensorDto: CreateSensorDto) {
-		const sensor = this.sensorRepository.create(createSensorDto);
+		const data = {
+			...createSensorDto,
+			start_register: this.parserService.logoToModbus(createSensorDto.register).modbusAddress,
+			end_register: 1
+		}
+		const sensor = this.sensorRepository.create(data);
 		if (!sensor) {
 			throw new Error("Failed to create a new sensor");
 		}
@@ -58,8 +65,9 @@ export class SensorService {
 		const updatedSensor = await this.sensorRepository.update({ id }, {
 			name: updateSensorDto.name,
 			description: updateSensorDto.description,
-			start_register: updateSensorDto.start_register,
-			end_register: updateSensorDto.end_register,
+			register: updateSensorDto.register,
+			start_register: this.parserService.logoToModbus(updateSensorDto.register as string).modbusAddress as number,
+			end_register: 1
 		})
 		if (!updatedSensor.affected) {
 			throw new Error(`Failed to update the agent with ID: ${id}`);
@@ -69,9 +77,9 @@ export class SensorService {
 		this.eventBus.emit("sensor:updated", {
 			id,
 			label: updateSensorDto.name as string,
-			start_register: updateSensorDto.start_register as number,
+			start_register: this.parserService.logoToModbus(updateSensorDto.register as string).modbusAddress as number,
 			agentFingerprint: agent?.fingerprint as string,
-			end_register: updateSensorDto.end_register as number,
+			end_register: 1,
 			s_type: "sensor"
 		});
 		return updatedSensor

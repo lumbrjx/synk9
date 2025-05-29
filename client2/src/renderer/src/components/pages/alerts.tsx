@@ -25,7 +25,7 @@ const formSchema = z.object({
 })
 
 
-const defaultValues = { name: "", message: "", memoryAddress: 0, expectedValue: 0, alertType: "normal" };
+const defaultValues = { name: "", message: "", memoryAddress: "", expectedValue: 0, alertType: "normal" };
 const alertType = [
 
   {value: "normal", label: "normal"},

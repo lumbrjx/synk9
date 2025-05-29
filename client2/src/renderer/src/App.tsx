@@ -22,6 +22,8 @@ export const socket = io(baseUrl, {
     type: "client"
   }
 });
+
+type AlertTypeLiteral = "normal" | "scheduled" | "offline" | "incident" | "breakdown";
 function App() {
   useEffect(() => {
     const handleDiscon = () => {
@@ -32,10 +34,25 @@ function App() {
       console.log("the data is here", message)
 
       const alert = message["alert:alert"].data.alert;
-      switch (alert.alertType) {
-        case "scheduled":
-          toast.info(alert.message)
+      switch (alert.alertType as AlertTypeLiteral) {
+        case "normal":
+          toast(alert.message);
           break;
+        case "scheduled":
+          toast.info(alert.message);
+          break;
+        case "offline":
+          toast.warning(alert.message);
+          break;
+        case "incident":
+          toast.error(`🚨 ${alert.message}`);
+          break;
+        case "breakdown":
+          toast.error(`💥 ${alert.message}`);
+          break;
+        default:
+          console.warn("Unknown alert type:", alert.alertType);
+          toast(alert.message);
       }
     };
 
