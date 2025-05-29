@@ -6,6 +6,7 @@ import { AlertTopic, AlertType, Rule } from 'src/entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { AgentService } from 'src/agent/agent.service';
+import { ParsersService } from 'src/parsers/parsers.service';
 
 @Injectable()
 export class AlertTopicService {
@@ -15,6 +16,7 @@ export class AlertTopicService {
 		private alertTopicRepository: Repository<AlertTopic>,
 		private dataSource: DataSource,
 		private eventBus: EventBusService,
+		private parserService: ParsersService,
 	) { }
 	async create(createAlertTopicDto: CreateAlertTopicDto) {
 
@@ -43,7 +45,7 @@ export class AlertTopicService {
 			this.eventBus.emit("sensor:created", {
 				label: d.name,
 				id: d.id,
-				start_register: 512,
+				start_register: this.parserService.logoToModbus(sensor.memoryAddress as string).modbusAddress as number,
 				agentFingerprint: agent?.fingerprint as string,
 				end_register: 1,
 				s_type: "general"
@@ -97,7 +99,7 @@ export class AlertTopicService {
 			this.eventBus.emit("sensor:updated", {
 				label: d.name,
 				id: d.id,
-				start_register: parseInt(sensor.memoryAddress),
+				start_register: this.parserService.logoToModbus(sensor.memoryAddress as string).modbusAddress as number,
 				agentFingerprint: agent?.fingerprint as string,
 				end_register: parseInt(sensor.memoryAddress),
 

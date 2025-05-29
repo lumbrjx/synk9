@@ -9,6 +9,7 @@ import { SensorModule } from './sensor/sensor.module';
 import { ConnectionStoreModule } from './connection-store/connection-store.module';
 import { ProcessEngineModule } from './process-engine/engine.module';
 import { AlertTopicModule } from './alert-topic/alert-topic.module';
+import { ParsersService } from './parsers/parsers.service';
 
 @Module({
 	imports: [
@@ -22,7 +23,7 @@ import { AlertTopicModule } from './alert-topic/alert-topic.module';
 		CordinatorModule,
 		AlertTopicModule,
 	],
-	providers: [CordinatorGateway],
+	providers: [CordinatorGateway, ParsersService],
 	exports: [CordinatorGateway]
 })
 export class AppModule { }

@@ -22,12 +22,11 @@ import {
 const formSchema = z.object({
   name: z.string().min(2),
   description: z.string().min(2),
-  start_register: z.coerce.number(),
-  end_register: z.coerce.number(),
+  register: z.string().min(1),
   agentId: z.string().min(2)
 })
 
-const defaultValues = { name: '', description: '', start_register: 0, end_register: 0 }
+const defaultValues = { name: '', description: '', register: '',  }
 
 export default function Sensors(): ReactElement {
   type Sensor = {
@@ -36,8 +35,9 @@ export default function Sensors(): ReactElement {
     description: string
     status: 'online' | 'offline' | 'error' | 'pending'
     plcId?: number
-    start_register?: number
-    end_register?: number
+    start_register?:number
+    register?:string
+    end_register?:number
     agentId?: string
     lastUpdated?: string
   }
@@ -65,7 +65,7 @@ export default function Sensors(): ReactElement {
     {
       accessorKey: 'status',
       header: 'Status',
-      cell: ({ row }) => {
+      cell: ({ }) => {
         return (
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-900/30 text-green-400 border border-green-900">
@@ -78,13 +78,14 @@ export default function Sensors(): ReactElement {
     },
     {
       accessorKey: 'registers',
-      header: 'Register Range',
+      header: 'Register',
       cell: ({ row }) => {
         const startReg = row.original.start_register
-        const endReg = row.original.end_register
+        const endReg= row.original.end_register
+        const reg = row.original.register
         return (
           <div className="font-mono text-sm">
-            {startReg != null && endReg != null ? `${startReg} - ${endReg}` : 'N/A'}
+            {startReg != null  && endReg != null && reg!=null ?`${reg} : ${startReg} - ${endReg}` : 'N/A'}
           </div>
         )
       }
@@ -172,16 +173,10 @@ export default function Sensors(): ReactElement {
       type: 'input' as const
     },
     {
-      name: 'start_register',
-      label: 'Start Register',
+      name: 'register',
+      label: 'Register',
       placeholder: '512',
-      type: 'input-number' as const
-    },
-    {
-      name: 'end_register',
-      label: 'End Register',
-      placeholder: '520',
-      type: 'input-number' as const
+      type: 'input' as const
     },
     {
       name: 'agentId',

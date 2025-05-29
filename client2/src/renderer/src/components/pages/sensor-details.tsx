@@ -13,8 +13,7 @@ import { queryClient } from '@/main'
 const formSchema = z.object({
   name: z.string().min(2),
   description: z.string().min(2),
-  start_register: z.coerce.number(),
-  end_register: z.coerce.number()
+  register: z.string().min(1),
 })
 
 export default function SensorDetails(): ReactElement {
@@ -36,8 +35,7 @@ export default function SensorDetails(): ReactElement {
   const [defaultVal, setDefaultVal] = useState({
     name: '',
     description: '',
-    start_register: 0,
-    end_register: 0
+    register: "",
   })
 
   const {
@@ -92,8 +90,7 @@ export default function SensorDetails(): ReactElement {
       setDefaultVal({
         name: sensors.name || '',
         description: sensors.description || '',
-        start_register: Number(sensors.start_register) || 0,
-        end_register: Number(sensors.end_register) || 0
+        register: sensors.register || "",
       })
     }
     if (isError) {
@@ -110,12 +107,11 @@ export default function SensorDetails(): ReactElement {
       type: 'input' as const
     },
     {
-      name: 'start_register',
-      label: 'Start Reg',
+      name: 'register',
+      label: 'Register',
       placeholder: 'very awesome agent',
-      type: 'input-number' as const
+      type: 'input' as const
     },
-    { name: 'end_register', label: 'End Reg', placeholder: 'true', type: 'input-number' as const }
   ]
   const onDelete = (): void => {
     deleteMutation.mutate()
