@@ -83,6 +83,7 @@ impl Agent {
                 label,
                 end_register,
                 start_register,
+                s_type
             } => {
                 println!("Processing AddSensor: {}", id);
                 let new_sensor = SensorConfig {
@@ -90,6 +91,7 @@ impl Agent {
                     label: label.to_string(),
                     start_register: *start_register,
                     end_register: *end_register,
+                    s_type: s_type.to_string(),
                 };
 
                 let mut state = self.state.lock().await;
@@ -112,6 +114,7 @@ impl Agent {
                 label,
                 start_register,
                 end_register,
+                s_type,
             } => {
                 let mut state = self.state.lock().await;
                 if state.paused_agent {
@@ -124,6 +127,7 @@ impl Agent {
                     label: label.to_string(),
                     start_register: *start_register,
                     end_register: *end_register,
+                    s_type: s_type.to_string()
                 });
             }
             ChEvent::PauseAgent => {

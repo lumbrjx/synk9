@@ -73,16 +73,29 @@ async fn process_single_sensor(
     let timestamp = Local::now().format("%y/%m/%d %H:%M:%S").to_string();
     println!("{} - Sensor {}: {}", timestamp, sensor.id, sensor_value);
 
-    let modbus_data = plc_io::ModbusData {
-        sensor_id: sensor.id,
-        time: timestamp,
-        value: sensor_value,
-        key: sensor.label,
-    };
-
-    agent_guard
-        .send_json("monitoring_streamline", &modbus_data)
-        .await?;
-
+    if sensor.s_type == "sensor" {
+        let modbus_data = plc_io::ModbusData {
+            sensor_id: sensor.id.clone(),
+            time: timestamp.clone(),
+            value: sensor_value,
+            key: sensor.label.clone(),
+            s_type: String::from("sensor"),
+        };
+        agent_guard
+            .send_json("monitoring_streamline", &modbus_data)
+            .await?;
+    }
+    if sensor.s_type == "general" {
+        let modbus_data = plc_io::ModbusData {
+            sensor_id: sensor.id,
+            time: timestamp,
+            value: sensor_value,
+            key: sensor.label,
+            s_type: String::from("general"),
+        };
+        agent_guard
+            .send_json("monitoring_streamline", &modbus_data)
+            .await?;
+    }
     Ok(())
 }

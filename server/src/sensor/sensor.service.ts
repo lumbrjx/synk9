@@ -33,7 +33,8 @@ export class SensorService {
 				id: saved.id,
 				start_register: saved.start_register,
 				agentFingerprint: agent?.fingerprint as string,
-				end_register: saved.end_register
+				end_register: saved.end_register,
+				s_type: "sensor"
 			});
 			return saved;
 		}
@@ -46,7 +47,6 @@ export class SensorService {
 		return this.sensorRepository.find();
 	}
 	async findForProcess(id: string) {
-		console.log("iiiiiiddd", id)
 		const process = await this.processReposistory.findOne({ where: { id: id }, relations: ["agent"] })
 		return this.sensorRepository.find({ where: { agentId: process?.agent.id } });
 	}
@@ -72,6 +72,7 @@ export class SensorService {
 			start_register: updateSensorDto.start_register as number,
 			agentFingerprint: agent?.fingerprint as string,
 			end_register: updateSensorDto.end_register as number,
+			s_type: "sensor"
 		});
 		return updatedSensor
 	}

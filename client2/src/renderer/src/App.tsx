@@ -9,9 +9,12 @@ import Details from "./components/pages/details";
 import Sensors from "./components/pages/sensors";
 import SensorDetails from "./components/pages/sensor-details";
 import AgentDetails from "./components/pages/agent-details";
-import { Toaster } from "sonner";
+import { toast, Toaster } from "sonner";
 import { io } from 'socket.io-client';
 import { baseUrl } from "./config";
+import Alerts from "./components/pages/alerts";
+import AlertDetails from "./components/pages/alert-details";
+import { useEffect } from "react";
 
 export const socket = io(baseUrl, {
   auth: {
@@ -20,7 +23,30 @@ export const socket = io(baseUrl, {
   }
 });
 function App() {
+  useEffect(() => {
+    const handleDiscon = () => {
+      toast.error("Lost connection to agent..");
+    };
 
+    const handleMessage = (message: any) => {
+      console.log("the data is here", message)
+
+      const alert = message["alert:alert"].data.alert;
+      switch (alert.alertType) {
+        case "scheduled":
+          toast.info(alert.message)
+          break;
+      }
+    };
+
+    socket.on("agent-disconnected", handleDiscon)
+    socket.on('alert', handleMessage);
+
+    return () => {
+      socket.off("agent-disconnected", handleDiscon)
+      socket.off('alert', handleMessage);
+    };
+  }, [socket]);
 
   return (
     <div className="flex font-lexend bg-primary text-xl w-screen">
@@ -36,6 +62,8 @@ function App() {
           <Route path="/agent/details/:id" element={<ProtectedRoute allowedRoles={[]}><AgentDetails /></ProtectedRoute>} />
           <Route path="/sensor/details/:id" element={<ProtectedRoute allowedRoles={[]}><SensorDetails /></ProtectedRoute>} />
           <Route path="/sensors" element={<ProtectedRoute allowedRoles={[]}><Sensors /></ProtectedRoute>} />
+          <Route path="/alert-topic" element={<ProtectedRoute allowedRoles={[]}><Alerts /></ProtectedRoute>} />
+          <Route path="/alert-topic/details/:id" element={<ProtectedRoute allowedRoles={[]}><AlertDetails /></ProtectedRoute>} />
         </Routes>
 
       </div>

@@ -8,6 +8,7 @@ pub const MESSAGE_CHANNEL_SIZE: usize = 32;
 pub struct SensorConfig {
     pub id: String,
     pub label: String,
+    pub s_type: String,
     pub start_register: u16,
     pub end_register: u16,
 }
@@ -25,6 +26,7 @@ pub enum ChEvent {
         label: String,
         start_register: u16,
         end_register: u16,
+        s_type: String,
     },
     RemoveSensor {
         id: String,
@@ -34,6 +36,7 @@ pub enum ChEvent {
         label: String,
         start_register: u16,
         end_register: u16,
+        s_type: String,
     },
     PauseAgent,
     HealthCheck,

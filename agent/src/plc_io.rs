@@ -14,6 +14,7 @@ pub struct ModbusData {
     pub time: String,
     pub value: u16,
     pub key: String,
+    pub s_type: String,
 }
 
 pub async fn stop_plc(ctx: &mut Context) -> Result<(), Box<dyn std::error::Error>> {

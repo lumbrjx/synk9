@@ -8,6 +8,7 @@ import { EventBusModule } from './event-bus/event-bus.module';
 import { SensorModule } from './sensor/sensor.module';
 import { ConnectionStoreModule } from './connection-store/connection-store.module';
 import { ProcessEngineModule } from './process-engine/engine.module';
+import { AlertTopicModule } from './alert-topic/alert-topic.module';
 
 @Module({
 	imports: [
@@ -19,6 +20,7 @@ import { ProcessEngineModule } from './process-engine/engine.module';
 		ConnectionStoreModule,
 		ProcessEngineModule,
 		CordinatorModule,
+		AlertTopicModule,
 	],
 	providers: [CordinatorGateway],
 	exports: [CordinatorGateway]

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, JSX } from 'react';
 import {
-	FaTachometerAlt, FaCogs, FaUsers, FaTools, FaTasks, FaAngleLeft, FaAngleRight
+	FaTachometerAlt, FaCogs, FaUsers, FaTools, FaTasks, FaAngleLeft, FaAngleRight,
+    FaBellSlash
 } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
@@ -11,6 +12,7 @@ const navItems = [
 	{ name: 'Workers', route: '/workers', icon: <FaUsers />, key: 'workers' },
 	{ name: 'Processes', route: '/processes', icon: <FaUsers />, key: 'processes' },
 	{ name: 'Sensors', route: '/sensors', icon: <FaUsers />, key: 'sensors' },
+	{ name: 'Alerts', route: '/alert-topic', icon: <FaBellSlash/>, key: 'alerts' },
 ];
 
 const bottomItems = [

@@ -30,8 +30,5 @@ export class ProcessStep {
 
 	@ManyToOne(() => Process, process => process.steps, { onDelete: 'CASCADE' })
 	process: Process;
-
-	@OneToMany(() => Rule, rule => rule.step, { cascade: true })
-	rules: Rule[];
 }
 

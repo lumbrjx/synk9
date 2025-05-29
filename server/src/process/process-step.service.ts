@@ -38,8 +38,8 @@ export class ProcessStepService {
 				}
 
 				const rule = new Rule();
-				rule.expectedValue = ruleDto.final_value;
-				rule.sensor = sensor;
+				rule.expectedValue = ruleDto.final_value.toString();
+				rule.memoryAddress = sensor.start_register.toString();
 				return rule;
 			});
 
@@ -101,14 +101,10 @@ export class ProcessStepService {
 
 			const newRules = updateDto.rules?.map(ruleDto => {
 				const rule = new Rule();
-				rule.expectedValue = ruleDto.final_value;
-				rule.sensor = sensorMap.get(ruleDto.sensor_id)!;
-				rule.step = step;
+				rule.expectedValue = ruleDto.final_value.toString();
+				rule.memoryAddress = sensorMap.get(ruleDto.sensor_id)!.start_register.toString();
 				return rule;
 			});
-
-			// Assign new rules to the process step
-			step.rules = newRules as Rule[];
 
 			// Save the updated process step
 			await manager.save(step);
