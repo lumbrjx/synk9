@@ -5,14 +5,25 @@ type LogEntry = { key: string; time: string; value: number };
 
 interface LogsProps {
   socket: Socket;
+  isPaused: boolean;
 }
 
-const Logs: React.FC<LogsProps> = ({ socket }) => {
+const Logs: React.FC<LogsProps> = ({ socket, isPaused }) => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
+  // Ref to keep track of the latest isPaused value
+  const isPausedRef = useRef(isPaused);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
   useEffect(() => {
     const handleMessage = (message: any) => {
+      // Check ref current value, not the stale closure
+      if (isPausedRef.current) return;
+
       try {
         const parsed: LogEntry = message;
         setLogs((prev) => [...prev, parsed]);
@@ -29,8 +40,9 @@ const Logs: React.FC<LogsProps> = ({ socket }) => {
   }, [socket]);
 
   useEffect(() => {
+    if (isPaused) return;
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [logs]);
+  }, [logs, isPaused]);
 
   return (
     <div className="h-64 overflow-y-auto text-purple-300 font-mono p-4 rounded-lg shadow bg-black">

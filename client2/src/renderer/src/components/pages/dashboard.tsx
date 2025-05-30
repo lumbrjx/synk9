@@ -6,6 +6,7 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold">Hello user</h1>
       <div className="text-white">
         <SocketComponent />
+
         Welcome to autotakt
       </div>
 

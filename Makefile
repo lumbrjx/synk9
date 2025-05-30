@@ -4,5 +4,5 @@ install-mdb-server-deps:
 	sudo apt install libmodbus-dev
 
 build-mdb-server:
-	cd mdb-server && gcc main.c -o main -lmodbus
+	cd mdb-server && gcc main.c -o main -lmodbus -lpthread
 
