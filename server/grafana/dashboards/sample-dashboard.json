@@ -1,0 +1,32 @@
+{
+  "uid": "sensor-dashboard",
+  "title": "Sensor Dashboard",
+  "timezone": "browser",
+  "schemaVersion": 34,
+  "version": 1,
+  "refresh": "1s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Sensor Values (value field)",
+      "datasource": {
+        "uid": "InfluxDB"
+      },
+      "targets": [
+        
+{
+  "query": "from(bucket: \"sensors_logs\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"_field\"] == \"value\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)\n  |> yield(name: \"mean\")",
+  "refId": "A"
+}
+
+      ],
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      }
+    }
+  ]
+}
+

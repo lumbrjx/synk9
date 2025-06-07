@@ -18,6 +18,7 @@ import { EventBusService } from 'src/event-bus/event-bus.service';
 import { ProcessService } from 'src/process/process.service';
 import { SyncService } from './sync.service';
 import { StreamManager } from 'src/process-engine/stream.service';
+import { LoggerService } from 'src/logger/logger.service';
 
 @WebSocketGateway({ cors: true })
 export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -30,7 +31,8 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		private connectionStore: ConnectionStore,
 		private processService: ProcessService,
 		private agentService: AgentService,
-		private syncService: SyncService
+		private syncService: SyncService,
+		private loggerService: LoggerService,
 	) { }
 
 	afterInit(server: Server) {
@@ -181,6 +183,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		@ConnectedSocket() client: Socket,
 	): Promise<void> {
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
+		this.loggerService.recordLogs(data)
 
 		const clientIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
 		for (const id of clientIds) {

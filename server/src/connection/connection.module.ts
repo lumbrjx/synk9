@@ -15,7 +15,7 @@ import { BullModule } from '@nestjs/bullmq';
 			inject: [ConfigService],
 			useFactory: (config: ConfigService) => ({
 				connection: {
-					host: config.get("REDIS_HOST"), 
+					host: config.get("REDIS_HOST"),
 					port: config.get("REDIS_PORT"),
 					password: config.get("REDIS_PASSWORD"),
 				}
@@ -55,7 +55,7 @@ import { BullModule } from '@nestjs/bullmq';
 			useFactory: (config: ConfigService) => {
 				return new InfluxDB({
 					url: config.get('INFLUX_URL') as string,
-					token: config.get('INFLUX_TOKEN'),
+					token: config.get('INFLUXDB_TOKEN'),
 				});
 			},
 		},

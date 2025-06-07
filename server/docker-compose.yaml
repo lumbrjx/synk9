@@ -41,13 +41,33 @@ services:
        DOCKER_INFLUXDB_INIT_USERNAME: admin
        DOCKER_INFLUXDB_INIT_PASSWORD: adminpassword
        DOCKER_INFLUXDB_INIT_ORG: myorg
-       DOCKER_INFLUXDB_INIT_BUCKET: machines_logs
-       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: mypassword
+       DOCKER_INFLUXDB_INIT_BUCKET: sensors_logs
+       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUXDB_TOKEN}
+
     volumes:
       - influxdb_data:/var/lib/influxdb
     restart: unless-stopped
+
+  auto_grafana:
+    image: grafana/grafana:9.5.2
+    container_name: grafana
+    depends_on:
+      - auto-influxdb
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ALLOW_EMBEDDING=true          # allow embedding in iframes
+      - GF_AUTH_ANONYMOUS_ENABLED=true             # enable anonymous access (optional)
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer          # anonymous role
+      # You can add more Grafana environment variables here if needed
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/dashboards:/etc/grafana/dashboards
 
 volumes:
   redis_data:
   pg_data:
   influxdb_data:
+  grafana_data:

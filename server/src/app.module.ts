@@ -10,6 +10,8 @@ import { ConnectionStoreModule } from './connection-store/connection-store.modul
 import { ProcessEngineModule } from './process-engine/engine.module';
 import { AlertTopicModule } from './alert-topic/alert-topic.module';
 import { ParsersService } from './parsers/parsers.service';
+import { LoggerService } from './logger/logger.service';
+import { LoggerModule } from './logger/logger.module';
 
 @Module({
 	imports: [
@@ -22,8 +24,9 @@ import { ParsersService } from './parsers/parsers.service';
 		ProcessEngineModule,
 		CordinatorModule,
 		AlertTopicModule,
+		LoggerModule,
 	],
-	providers: [CordinatorGateway, ParsersService],
+	providers: [CordinatorGateway, ParsersService, LoggerService],
 	exports: [CordinatorGateway]
 })
 export class AppModule { }
