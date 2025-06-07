@@ -1,14 +1,13 @@
-import { SocketComponent } from "@/sock/sock";
+import Metrics from "../ui/metrics";
+
 export default function Dashboard() {
+
 
   return (
     <div>
-      <h1 className="text-3xl font-bold">Hello user</h1>
       <div className="text-white">
-        <SocketComponent />
-        Welcome to autotakt
+        <Metrics/>
       </div>
-
     </div>
   );
 }
