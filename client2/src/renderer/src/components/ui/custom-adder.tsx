@@ -14,12 +14,14 @@ import { Input } from "./input"
 export type Rule = {
   sensor_id: string
   expectedValue?: string
+  register?: string
 }
 
 // Define type for sensor options
 export type SensorOption = {
   value: string
   label: string
+  register?: string
 }
 
 type RulesInputProps = {
@@ -41,7 +43,7 @@ export const RulesInput = ({
 }: RulesInputProps) => {
   // Add a new empty rule
   const addRule = () => {
-    const newRules = [...value, { sensor_id: "", expectedValue: "" }]
+    const newRules = [...value, { sensor_id: "", expectedValue: "", register: '' }]
     onChange(newRules)
   }
 
@@ -53,12 +55,13 @@ export const RulesInput = ({
   }
 
   // Update a rule's sensorId at specific index
-  const updateSensorId = (index: number, newSensorId: string) => {
+  const updateSensorId = (index: number, newSensorId: string, register?: string) => {
     const newRules = [...value]
-    newRules[index] = { ...newRules[index], sensor_id: newSensorId }
+    newRules[index] = { ...newRules[index], sensor_id: newSensorId, register: register}
     onChange(newRules)
   }
   const updateRuleValue = (index: number, newRule: string) => {
+
     const newRules = [...value]
     newRules[index] = { ...newRules[index], expectedValue: newRule }
     onChange(newRules)
@@ -78,7 +81,7 @@ export const RulesInput = ({
                     {/* Select dropdown for sensorId */}
                     {double === false && <Select
                       value={rule.sensor_id}
-                      onValueChange={(newValue) => updateSensorId(index, newValue)}
+                      onValueChange={(newValue) => updateSensorId(index, newValue, rule.register)}
                     >
                       <SelectTrigger className="text-purple-100 w-full truncate">
                         <SelectValue placeholder="Select sensor" />
@@ -87,14 +90,14 @@ export const RulesInput = ({
                         {sensorOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
+                            {option.register}
                           </SelectItem>
-
                         ))}
                       </SelectContent>
                     </Select>}
                     {double === true && <Input
                       value={rule.sensor_id}
-                      onChange={(e) => updateSensorId(index, e.target.value)}
+                      onChange={(e) => updateSensorId(index, e.target.value, rule.register)}
                       placeholder="MemoryAddress"
                       className="text-purple-100"
                     />}

@@ -179,7 +179,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 
 	@SubscribeMessage('monitoring_streamline')
 	async handleMessage(
-		@MessageBody() data: { key: string; value: any, sensor_id: string },
+		@MessageBody() data: { key: string; value: any, sensor_id: string, register: string },
 		@ConnectedSocket() client: Socket,
 	): Promise<void> {
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
@@ -205,7 +205,8 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			label: data.key,
 			value: data.value,
 			agentId: agentDbId.id,
-			sensor_id: data.sensor_id
+			sensor_id: data.sensor_id,
+			register: data.register
 		});
 	}
 	@SubscribeMessage('health_check')

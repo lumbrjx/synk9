@@ -40,6 +40,7 @@ export class SensorService {
 				id: saved.id,
 				start_register: saved.start_register,
 				agentFingerprint: agent?.fingerprint as string,
+				register: saved.register,
 				end_register: saved.end_register,
 				s_type: "sensor"
 			});
@@ -79,6 +80,7 @@ export class SensorService {
 			label: updateSensorDto.name as string,
 			start_register: this.parserService.logoToModbus(updateSensorDto.register as string).modbusAddress as number,
 			agentFingerprint: agent?.fingerprint as string,
+			register: updateSensorDto.register as string,
 			end_register: 1,
 			s_type: "sensor"
 		});

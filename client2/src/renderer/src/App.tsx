@@ -12,9 +12,9 @@ import AgentDetails from "./components/pages/agent-details";
 import { toast, Toaster } from "sonner";
 import { io } from 'socket.io-client';
 import { baseUrl } from "./config";
+import { useEffect } from "react";
 import Alerts from "./components/pages/alerts";
 import AlertDetails from "./components/pages/alert-details";
-import { useEffect } from "react";
 
 export const socket = io(baseUrl, {
   auth: {

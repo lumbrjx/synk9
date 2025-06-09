@@ -121,14 +121,14 @@ export default function Details() {
       setProc(steps.response3);
     }
     if (steps?.response2) {
-      const filtered = steps.response2.map((sensor: any) => ({ value: sensor.id, label: sensor.name }));
+      const filtered = steps.response2.map((sensor: any) => ({ value: sensor.id, label: sensor.name, register:sensor.register }));
       console.log("im the champ")
       setAvailableSensors(filtered);
     }
     if (isError) {
       console.error("Error details:", error);
     }
-  }, [status, isLoading, isFetching, steps?.response2, steps?.response, isError, error]);
+  }, [status, isLoading, isFetching, steps?.response2, , isError, error]);
 
   const fields = [
     {

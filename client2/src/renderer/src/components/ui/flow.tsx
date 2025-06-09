@@ -5,7 +5,11 @@ import ReactFlow, {
   Position,
   useNodesState,
   useEdgesState,
-  ConnectionLineType
+  ConnectionLineType,
+  Node,
+  Edge,
+  getBezierPath,
+  EdgeProps
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Save, AlertCircle, } from 'lucide-react';
@@ -46,9 +50,87 @@ const rotationAdjustedPosition = (originalPosition, rotation) => {
   return positionMap[originalPosition][rotationIndex];
 };
 
+// Add custom edge component for pipe-like appearance
+const CustomEdge = ({
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  markerEnd,
+}: EdgeProps) => {
+  const [edgePath] = getBezierPath({
+    sourceX,
+    sourceY,
+    sourcePosition,
+    targetX,
+    targetY,
+    targetPosition,
+  });
+
+  return (
+    <>
+      {/* Outer pipe */}
+      <path
+        style={{
+          ...style,
+          strokeWidth: 12,
+          stroke: '#4B5563',
+          strokeLinecap: 'round',
+        }}
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={markerEnd}
+      />
+      {/* Inner pipe */}
+      <path
+        style={{
+          ...style,
+          strokeWidth: 8,
+          stroke: '#60A5FA',
+          strokeLinecap: 'round',
+        }}
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={markerEnd}
+      />
+      {/* Flow animation */}
+      <path
+        style={{
+          ...style,
+          strokeWidth: 2,
+          stroke: '#93C5FD',
+          strokeLinecap: 'round',
+          strokeDasharray: '5,5',
+        }}
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={markerEnd}
+      >
+        <animate
+          attributeName="stroke-dashoffset"
+          values="0;10"
+          dur="1s"
+          repeatCount="indefinite"
+        />
+      </path>
+    </>
+  );
+};
+
+// Update TankNode with simplified color handling
 const TankNode = ({ data, isConnectable }) => {
   const rotation = data.rotation || 0;
   const rotationStyle = { transform: `rotate(${rotation}deg)` };
+  const liquidColor = data.liquidColor || '#60A5FA';
+
+  const getLiquidColor = () => {
+    if (data.status === 'warning') return '#FBBF24';
+    if (data.status === 'error') return '#EF4444';
+    return liquidColor;
+  };
 
   return (
     <div className="relative">
@@ -56,37 +138,52 @@ const TankNode = ({ data, isConnectable }) => {
         type="target"
         position={rotationAdjustedPosition(Position.Top, rotation)}
         isConnectable={isConnectable}
+        style={{
+          width: 14,
+          height: 14,
+          background: '#4B5563',
+          border: '2px solid #9CA3AF',
+          borderRadius: '50%'
+        }}
       />
       <div className="flex flex-col items-center">
         <div className="text-xs text-gray-300 mb-1">{data.label || 'Tank'}</div>
         <div style={rotationStyle}>
           <svg width="80" height="100" viewBox="0 0 80 100">
-            {/* Tank body */}
+            {/* Tank body with industrial look */}
             <path d="M15,20 L15,80 Q15,90 25,90 L55,90 Q65,90 65,80 L65,20 Q65,10 55,10 L25,10 Q15,10 15,20 Z"
               fill="#2D3748" stroke="#9CA3AF" strokeWidth="2" />
-            {/* Tank level */}
+            {/* Tank level with custom color */}
             <path
               d={`M15,${90 - (data.level + 0.05 || 0) * 70} L15,80 Q15,90 25,90 L55,90 Q65,90 65,80 L65,${90 - (data.level + 0.05 || 0) * 70}`}
-              fill={data.status === 'warning' ? '#FBBF24' : data.status === 'error' ? '#EF4444' : '#60A5FA'}
+              fill={getLiquidColor()}
               fillOpacity="0.8"
             />
-            {/* Level markings */}
-            <path d="M15,20 L20,20 M15,35 L20,35 M15,50 L20,50 M15,65 L20,65 M15,80 L20,80" stroke="#9CA3AF" strokeWidth="1" />
-            {/* Top connections */}
-            <circle cx="30" cy="10" r="3" fill="#4B5563" stroke="#9CA3AF" strokeWidth="1" />
-            <circle cx="50" cy="10" r="3" fill="#4B5563" stroke="#9CA3AF" strokeWidth="1" />
-            {/* Level percentage */}
-            <text x="40" y="50" textAnchor="middle" fill="#E5E7EB" fontSize="12">{Math.round((data.level || 0) * 100)}%</text>
+            {/* Industrial-style level markings */}
+            <path d="M15,20 L20,20 M15,35 L20,35 M15,50 L20,50 M15,65 L20,65 M15,80 L20,80"
+              stroke="#9CA3AF" strokeWidth="1.5" />
+            {/* Industrial-style top connections */}
+            <circle cx="30" cy="10" r="4" fill="#4B5563" stroke="#9CA3AF" strokeWidth="1.5" />
+            <circle cx="50" cy="10" r="4" fill="#4B5563" stroke="#9CA3AF" strokeWidth="1.5" />
+            {/* Level percentage with industrial font */}
+            <text x="40" y="50" textAnchor="middle" fill="#E5E7EB" fontSize="12" fontFamily="monospace">
+              {Math.round((data.level || 0) * 100)}%
+            </text>
           </svg>
         </div>
         <div className="flex items-center mt-2">
           <button
             onClick={(e) => {
               e.stopPropagation();
-              data.onRotate && data.onRotate(data.id, ((data.rotation || 0) - 90) % 360);
+              const newRotation = ((data.rotation || 0) - 90) % 360;
+              data.onRotate && data.onRotate(data.id, newRotation);
             }}
-            className="mr-1 p-1 rounded "
+            className="mr-1 p-1 rounded hover:bg-gray-700 transition-colors"
           >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+            </svg>
           </button>
           {data.status === 'warning' ? (
             <div className="text-yellow-400 text-xs flex items-center">
@@ -100,10 +197,15 @@ const TankNode = ({ data, isConnectable }) => {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              data.onRotate && data.onRotate(data.id, ((data.rotation || 0) + 90) % 360);
+              const newRotation = ((data.rotation || 0) + 90) % 360;
+              data.onRotate && data.onRotate(data.id, newRotation);
             }}
-            className="ml-1 p-1 rounded "
+            className="ml-1 p-1 rounded hover:bg-gray-700 transition-colors"
           >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+              <path d="M16 3h5v5" />
+            </svg>
           </button>
         </div>
       </div>
@@ -111,6 +213,13 @@ const TankNode = ({ data, isConnectable }) => {
         type="source"
         position={rotationAdjustedPosition(Position.Bottom, rotation)}
         isConnectable={isConnectable}
+        style={{
+          width: 14,
+          height: 14,
+          background: '#4B5563',
+          border: '2px solid #9CA3AF',
+          borderRadius: '50%'
+        }}
       />
     </div>
   );
@@ -512,6 +621,28 @@ const nodeTypes = {
   sensor: SensorNode
 };
 
+// Add type definitions
+interface NodeData {
+  label?: string;
+  level?: number;
+  status?: string;
+  value?: number;
+  unit?: string;
+  sensor?: Rule[];
+  propSensors?: any;
+  tank_level_sensor?: any;
+  counter_sensor?: any;
+  tank_max_level?: number;
+  note?: string;
+  tankColor?: string;
+  liquidColor?: string;
+  warningColor?: string;
+  errorColor?: string;
+}
+
+interface CustomNode extends Node {
+  data: NodeData;
+}
 
 // Sidebar component for adding new nodes
 const Sidebar = ({ onDragStart }) => {
@@ -551,6 +682,19 @@ const Sidebar = ({ onDragStart }) => {
 // Properties panel component
 const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodeProps, setNodeProps, selectedNode, onNodeUpdate, ...props }) => {
   const [rules, setRules] = useState<Rule[]>([])
+  const [_propField, setPropField] = useState([])
+
+
+  console.log("#######################################################", props.sensorOpt);
+  // Update nodeProps when selectedNode changes
+  useEffect(() => {
+    if (selectedNode) {
+      console.log("WE NEED THIS", selectedNode.data, selectedNode.data.sensor)
+      setNodeProps(selectedNode.data);
+      setRules(selectedNode.data.sensor || []);
+    }
+  }, [selectedNode]);
+
   const handleRulesChange = (newRules: Rule[]) => {
     setRules(newRules)
     const updatedProps = {
@@ -559,7 +703,7 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
     };
     setNodeProps(updatedProps);
   }
-  const [_propField, setPropField] = useState([])
+
   const handlePropFieldChange = (props) => {
     setPropField(props)
     const updatedProps = {
@@ -568,6 +712,7 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
     };
     setNodeProps(updatedProps);
   }
+
   const handleStart = () => {
     props.setIsRunning(true);
     console.log("Process started", props.pageId);
@@ -692,7 +837,16 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
       case 'tank':
         return (
           <>
-
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-gray-300">Liquid Color</label>
+              <input
+                type="color"
+                name="liquidColor"
+                value={nodeProps.liquidColor || '#60A5FA'}
+                onChange={handleChange}
+                className="w-full h-8 rounded-md cursor-pointer"
+              />
+            </div>
             <div className="flex flex-col gap-2">
               <label className="text-sm text-gray-300">Fill Level sensor</label>
               <Select
@@ -935,28 +1089,62 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
 // Main FlowBuilder component
 export const ScadaFlowBuilder = ({ ...props }) => {
   const reactFlowWrapper = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
-  const [selectedNode, setSelectedNode] = useState(null);
+  const [selectedNode, setSelectedNode] = useState<CustomNode | null>(null);
+  const [nodeProps, setNodeProps] = useState<NodeData>({});
+  const [nodeSensors, setNodeSensors] = useState<Record<string, any>>({});
 
-  const onConnect = useCallback(
-    (params) => {
-      // Create styled edge
-      const newEdge = {
-        ...params,
-        style: {
-          stroke: '#60A5FA',
-          strokeWidth: 3
-        },
-        animated: true,
-        type: 'smoothstep'
-      };
+  const calculateTankLevel = (rawValue: number, minValue = 0, maxValue = 100) => {
+    // Ensure minValue is less than maxValue
+    if (minValue >= maxValue) {
+      console.error("Min value must be less than max value");
+      return 0;
+    }
 
-      setEdges((eds) => addEdge(newEdge, eds));
+    // Calculate the normalized level (0-1)
+    const normalizedLevel = (rawValue - minValue) / (maxValue - minValue);
+
+    // Clamp the value between 0 and 1
+    const clampedLevel = Math.max(0, Math.min(1, normalizedLevel));
+
+    console.log(`Raw sensor value: ${rawValue}, Normalized: ${normalizedLevel.toFixed(4)}, Clamped: ${clampedLevel.toFixed(4)}`);
+
+    return clampedLevel;
+  };
+
+  const onNodeClick = useCallback((_, node: CustomNode) => {
+    console.log("Node clicked:", node);
+    setSelectedNode(node);
+    setNodeProps(node.data);
+  }, []);
+
+  const onNodeUpdate = useCallback(
+    (id: string, data: Partial<NodeData>) => {
+      setNodes((nds) =>
+        nds.map((node) => {
+          if (node.id === id) {
+            const updatedNode = { ...node, data: { ...node.data, ...data } };
+            if (selectedNode && selectedNode.id === id) {
+              setSelectedNode(updatedNode);
+              setNodeProps(updatedNode.data);
+            }
+            return updatedNode;
+          }
+          return node;
+        })
+      );
     },
-    [setEdges]
+    [setNodes, selectedNode]
   );
+
+  // Update nodeProps when selectedNode changes
+  useEffect(() => {
+    if (selectedNode) {
+      setNodeProps(selectedNode.data);
+    }
+  }, [selectedNode]);
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -996,24 +1184,6 @@ export const ScadaFlowBuilder = ({ ...props }) => {
     [reactFlowInstance, setNodes]
   );
 
-  const onNodeClick = useCallback((_, node) => {
-    console.log("i got clicked", node);
-    setSelectedNode(node);
-  }, []);
-
-  const onNodeUpdate = useCallback(
-    (id, data) => {
-      setNodes((nds) =>
-        nds.map((node) => {
-          if (node.id === id) {
-            return { ...node, data: { ...node.data, ...data } };
-          }
-          return node;
-        })
-      );
-    },
-    [setNodes]
-  );
   const createMutation = useAxiosMutation({
     mutationFn: (data: any) =>
       update("/process/flow/" + props.pageId, data),
@@ -1083,113 +1253,191 @@ export const ScadaFlowBuilder = ({ ...props }) => {
     }
   }, [status, isLoading, isFetching, process, isError, error]);
 
-  const [nodeProps, setNodeProps] = useState((selectedNode as any)?.data || {});
-  const [nodeSensors, setNodeSensors] = useState();
   useEffect(() => {
     const handleDiscon = () => {
       toast.error("Lost connection to agent..");
       props.setIsRunning(false);
-      try {
-      } catch (err) {
-        console.error('Failed to parse log message:', err);
-      }
     };
 
+    socket.on("agent-disconnected", handleDiscon);
 
-    const calculateTankLevel = (rawValue, minValue = 0, maxValue = 100) => {
-      // Ensure minValue is less than maxValue
-      if (minValue >= maxValue) {
-        console.error("Min value must be less than max value");
-        return 0;
-      }
-
-      // Calculate the normalized level (0-1)
-      const normalizedLevel = (rawValue - minValue) / (maxValue - minValue);
-
-      // Clamp the value between 0 and 1
-      const clampedLevel = Math.max(0, Math.min(1, normalizedLevel));
-
-      console.log(`Raw sensor value: ${rawValue}, Normalized: ${normalizedLevel.toFixed(4)}, Clamped: ${clampedLevel.toFixed(4)}`);
-
-      return clampedLevel;
+    return () => {
+      socket.off("agent-disconnected", handleDiscon);
     };
-    const handleSpecialSensorData = (id: any, sensor: any, data: any) => {
-      console.log("Processing sensor data:", sensor);
+  }, [socket, props.setIsRunning]);
 
-      // Create a single updates object to collect all changes
-      let updates = { ...nodeProps };
-      let updatesApplied = false;
+  const handleSpecialSensorData = (id: string, sensor: any, data: NodeData) => {
+    console.log("Processing sensor data:", sensor);
 
-      // Check for specific sensor types directly
-      if (sensor.tank_level_sensor !== undefined) {
-        const rawValue = sensor.tank_level_sensor.sensorValue;
-        const calculatedLevel = calculateTankLevel(rawValue, 0, data.tank_max_level);
-        console.log("Tank level:", rawValue, "→ Calculated:", data.tank_max_level);
+    // Create a single updates object to collect all changes
+    let updates: Partial<NodeData> = { ...nodeProps };
+    let updatesApplied = false;
 
-        updates.level = calculatedLevel;
-        updatesApplied = true;
+    // Check for specific sensor types directly
+    if (sensor.tank_level_sensor !== undefined) {
+      const rawValue = sensor.tank_level_sensor.sensorValue;
+      const calculatedLevel = calculateTankLevel(rawValue, 0, data.tank_max_level || 100);
+      console.log("Tank level:", rawValue, "→ Calculated:", data.tank_max_level);
+
+      updates.level = calculatedLevel;
+      updatesApplied = true;
+    }
+
+    if (sensor.counter_sensor !== undefined) {
+      const counterValue = sensor.counter_sensor.sensorValue;
+      console.log("Counter value:", counterValue);
+
+      updates.value = counterValue;
+      updatesApplied = true;
+    }
+
+    // Handle temperature sensor
+    if (sensor.temperature_sensor !== undefined) {
+      const tempValue = sensor.temperature_sensor.sensorValue;
+      console.log("Temperature value:", tempValue);
+
+      updates.value = tempValue;
+      updates.unit = '°C';
+      updatesApplied = true;
+    }
+
+    // Apply updates only if changes were made
+    if (updatesApplied) {
+      console.log(`Updating node ${id} with:`, updates);
+      setNodeProps(updates);
+      onNodeUpdate(id, updates);
+    }
+  };
+
+  const handleMessage = (message: any) => {
+    console.log("Received message:", message);
+    try {
+      // Extract the first (and only) key dynamically
+      const [_eventType, data]: any = Object.entries(message)[0];
+      if (data.id !== props.pageId) return;
+
+      if (!data?.data) return;
+      for (const node of data.data.nodes) {
+        if (node.data.propSensors) {
+          handleSpecialSensorData(node.id, node.data.propSensors, node.data);
+        }
+        console.log("Processing node:", node.id, selectedNode?.id, node.data);
+        if (selectedNode && node.id === selectedNode.id) {
+          const nodeSensors = node.data.sensor;
+          setNodeSensors({ [selectedNode.id]: nodeSensors });
+        }
       }
+    } catch (err) {
+      console.error('Failed to parse log message:', err);
+    }
+  };
 
-      if (sensor.counter_sensor !== undefined) {
-        const counterValue = sensor.counter_sensor.sensorValue;
-        console.log("Counter value:", counterValue);
-
-        updates.value = counterValue;
-        updatesApplied = true;
-      }
-
-      // Apply updates only if changes were made
-      if (updatesApplied) {
-        console.log(`Updating node ${id} with:`, updates);
-        setNodeProps(updates);
-        onNodeUpdate(id, updates);
-      }
-    };
-
-    const handleMessage = (message: any) => {
-      console.log("HADI JDIDA", message);
-      try {
-        // Extract the first (and only) key dynamically
-        const [_eventType, data]: any = Object.entries(message)[0];
-        if (data.id !== props.pageId) return;
-
-        if (!data?.data) return;
-        for (const node of data.data.nodes) {
-          if (node.data.propSensors) {
-            handleSpecialSensorData(node.id, node.data.propSensors, node.data);
-          }
-          console.log("this nodess", node.id, (selectedNode as any)?.id);
-          if (node.id === (selectedNode as any)?.id) {
-            const nodeSensors = node.data.sensor;
-            setNodeSensors({ [(selectedNode as any)?.id]: nodeSensors } as any);
-          }
-        };
-
-
-
-        // props.setEdges(data.data.edges);
-        // props.setNodes(data.data.nodes);
-
-      } catch (err) {
-        console.error('Failed to parse log message:', err);
-      }
-    };
-
-    socket.on("agent-disconnected", handleDiscon)
+  useEffect(() => {
     socket.on('step-data', handleMessage);
 
     return () => {
-      socket.off("agent-disconnected", handleDiscon)
       socket.off('step-data', handleMessage);
     };
   }, [socket, selectedNode]);
+
+  // Add alert handling
+  useEffect(() => {
+    const handleAlert = (message: any) => {
+      console.log("Received alert:", message);
+      try {
+        const alert = message["alert:alert"].data.alert;
+        console.log("Processing alert:", {
+          type: alert.alertType,
+          message: alert.message,
+          rules: alert.rules
+        });
+
+        // Find nodes that have sensors matching the alert's rules
+        setNodes((nds) =>
+          nds.map((node) => {
+            console.log("Checking node:", {
+              id: node.id,
+              type: node.type,
+              sensors: node.data.sensor,
+              propSensor: node.data.propSensors
+            });
+
+            // Check if node has sensors that match the alert rules
+            const hasMatchingSensor = node.data.sensor?.some((sensor: any) => {
+              const matches = alert.rules?.some((rule: any) => {
+                console.log("Comparing sensor:", {
+                  sensorId: sensor.sensor_id,
+                  ruleMemoryAddress: rule.memoryAddress,
+                  ruleAgentId: rule.agentId,
+                  sensor:sensor,
+                  rule:rule,
+                  sensorAgentId: sensor.agentId,
+                  sensorMemoryAddress: sensor.register,
+                  ruleId: rule.id,
+                  matches: sensor.sensor_id === rule.sensor_id
+                });
+                return sensor.register === rule.memoryAddress;
+              });
+              return matches;
+            });
+
+
+            if (!hasMatchingSensor) {
+              // Update node status based on alert type
+              let newStatus = 'normal';
+              switch (alert.alertType) {
+                case 'incident':
+                case 'breakdown':
+                  newStatus = 'error';
+                  break;
+                case 'offline':
+                  newStatus = 'warning';
+                  break;
+                case 'normal':
+                  newStatus = 'normal';
+                  break;
+              }
+
+              console.log("Updating node status:", {
+                nodeId: node.id,
+                oldStatus: node.data.status,
+                newStatus: newStatus,
+                alertType: alert.alertType
+              });
+
+              // Update the node's data
+              return {
+                ...node,
+                data: {
+                  ...node.data,
+                  status: newStatus
+                }
+              };
+            }
+            return node;
+          })
+        );
+      } catch (err) {
+        console.error('Failed to process alert:', err);
+      }
+    };
+
+    socket.on('alert', handleAlert);
+
+    return () => {
+      socket.off('alert', handleAlert);
+    };
+  }, [socket]);
+
+  const edgeTypes = {
+    custom: CustomEdge,
+  };
 
   return (
     <div className="flex text-gray-200">
       <ScrollArea>
         {!props.buttonDisabled && <Sidebar onDragStart={onDragStart} />}
       </ScrollArea>
-
 
       <div className="flex-1 flex flex-col h-240" ref={reactFlowWrapper}>
         <div className="p-3 border-b border-gray-700 flex justify-between ">
@@ -1210,9 +1458,17 @@ export const ScadaFlowBuilder = ({ ...props }) => {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
+          onConnect={(params) => {
+            const newEdge = {
+              ...params,
+              type: 'custom',
+              animated: true,
+            };
+            setEdges((eds) => addEdge(newEdge, eds));
+          }}
           onInit={setReactFlowInstance as any}
           onDrop={onDrop}
           onDragOver={onDragOver}
@@ -1220,9 +1476,9 @@ export const ScadaFlowBuilder = ({ ...props }) => {
           onPaneClick={onPaneClick}
           fitView
           deleteKeyCode="Delete"
-          connectionLineStyle={{ stroke: '#60A5FA', strokeWidth: 3 }}
+          connectionLineStyle={{ stroke: '#60A5FA', strokeWidth: 2 }}
           connectionLineType={ConnectionLineType.SmoothStep}
-          defaultEdgeOptions={{ type: 'smoothstep' }}
+          defaultEdgeOptions={{ type: 'custom' }}
         >
         </ReactFlow>
       </div>
@@ -1253,4 +1509,3 @@ export const ScadaFlowBuilder = ({ ...props }) => {
     </div>
   );
 };
-

@@ -13,6 +13,7 @@ export interface AppEvents {
 		label: string,
 		start_register: number,
 		end_register: number,
+		register: string,
 		agentFingerprint: string,
 		s_type: "general" | "sensor"
 	};
@@ -21,6 +22,7 @@ export interface AppEvents {
 		id: string,
 		label: string,
 		start_register: number,
+		register: string,
 		end_register: number,
 		agentFingerprint: string,
 		s_type: "general" | "sensor"
@@ -34,9 +36,9 @@ export interface AppEvents {
 	'process:kill': { id: string };
 
 	'step:valid': { id: string, stepId: string, agentId: string };
-	'alert:alert': { id: string,  agentId: string , data: any};
+	'alert:alert': { id: string, agentId: string, data: any };
 	'step:running': { id: string, data: any, agentId: string };
 
-	'sensor:process-state-updated': { label: string, value: number, agentId: string, sensor_id: string };
+	'sensor:process-state-updated': { label: string, value: number, agentId: string, sensor_id: string, register:string };
 }
 

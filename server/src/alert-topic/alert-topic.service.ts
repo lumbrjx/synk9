@@ -47,6 +47,7 @@ export class AlertTopicService {
 				id: d.id,
 				start_register: this.parserService.logoToModbus(sensor.memoryAddress as string).modbusAddress as number,
 				agentFingerprint: agent?.fingerprint as string,
+				register: sensor.memoryAddress,
 				end_register: 1,
 				s_type: "general"
 			});
@@ -54,11 +55,11 @@ export class AlertTopicService {
 	}
 
 	findAll() {
-		return this.alertTopicRepository.find();
+		return this.alertTopicRepository.find({ relations: ["rules"] });
 	}
 
 	findOne(id: string) {
-		return this.alertTopicRepository.findOne({ where: { id } });
+		return this.alertTopicRepository.findOne({ where: { id }, relations: ["rules"] });
 	}
 
 	async update(id: string, updateAlertTopicDto: UpdateAlertTopicDto) {
@@ -80,7 +81,7 @@ export class AlertTopicService {
 			s.agentId = updateAlertTopicDto.agentId;
 
 			// Delete existing rules and create new ones
-			await manager.delete(Rule, { step: { id } });
+			await manager.delete(Rule, { id: { id } });
 
 			const newRules = updateAlertTopicDto.rules?.map(ruleDto => {
 				const rule = new Rule();
@@ -101,8 +102,8 @@ export class AlertTopicService {
 				id: d.id,
 				start_register: this.parserService.logoToModbus(sensor.memoryAddress as string).modbusAddress as number,
 				agentFingerprint: agent?.fingerprint as string,
-				end_register: parseInt(sensor.memoryAddress),
-
+				register: sensor.memoryAddress,
+				end_register: 1,
 				s_type: "general"
 			});
 		}

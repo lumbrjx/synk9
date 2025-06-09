@@ -82,6 +82,7 @@ impl Agent {
                 id,
                 label,
                 end_register,
+                register,
                 start_register,
                 s_type
             } => {
@@ -90,6 +91,7 @@ impl Agent {
                     id: id.to_string(),
                     label: label.to_string(),
                     start_register: *start_register,
+                    register: register.to_string(),
                     end_register: *end_register,
                     s_type: s_type.to_string(),
                 };
@@ -114,6 +116,7 @@ impl Agent {
                 label,
                 start_register,
                 end_register,
+                register,
                 s_type,
             } => {
                 let mut state = self.state.lock().await;
@@ -127,6 +130,7 @@ impl Agent {
                     label: label.to_string(),
                     start_register: *start_register,
                     end_register: *end_register,
+                    register: register.to_string(),
                     s_type: s_type.to_string()
                 });
             }

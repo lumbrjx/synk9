@@ -10,6 +10,7 @@ pub struct SensorConfig {
     pub label: String,
     pub s_type: String,
     pub start_register: u16,
+    pub register: String,
     pub end_register: u16,
 }
 
@@ -25,6 +26,7 @@ pub enum ChEvent {
         id: String,
         label: String,
         start_register: u16,
+        register: String,
         end_register: u16,
         s_type: String,
     },
@@ -35,6 +37,7 @@ pub enum ChEvent {
         id: String,
         label: String,
         start_register: u16,
+        register: String,
         end_register: u16,
         s_type: String,
     },

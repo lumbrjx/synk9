@@ -3,12 +3,14 @@ import { AgentService } from 'src/agent/agent.service';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { isEqual } from "lodash"
 import { Agent, AlertTopic, Sensor } from 'src/entities';
+import { ParsersService } from 'src/parsers/parsers.service';
 
 @Injectable()
 export class SyncService {
 	constructor(
 		private readonly eventBus: EventBusService,
 		private readonly agentService: AgentService,
+		private readonly parserService: ParsersService
 	) { }
 
 	async syncAgentWithServerData(data: any, fingerprint: string) {
@@ -34,6 +36,7 @@ export class SyncService {
 					label: sensor.name,
 					start_register: sensor.start_register,
 					end_register: sensor.end_register,
+					register: sensor.register,
 					agentFingerprint: agent.fingerprint,
 					s_type: "sensor"
 				})
@@ -44,7 +47,8 @@ export class SyncService {
 					{
 						id: sensor.id,
 						label: sensor.name,
-						start_register: 512,
+						start_register: this.parserService.logoToModbus(rule.memoryAddress).modbusAddress as number,
+						register: rule.memoryAddress,
 						end_register: 1,
 						agentFingerprint: agent.fingerprint,
 						s_type: "general"

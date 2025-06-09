@@ -11,6 +11,7 @@ pub struct WriteData {
 #[derive(Serialize, Deserialize)]
 pub struct ModbusData {
     pub sensor_id: String,
+    pub register: String,
     pub time: String,
     pub value: u16,
     pub key: String,

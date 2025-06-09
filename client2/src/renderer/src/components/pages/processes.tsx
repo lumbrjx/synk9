@@ -12,7 +12,6 @@ import { queryClient } from '@/main'
 import {
   Play,
   Activity,
-  CheckCircle,
   AlertTriangle,
   RefreshCw,
   CircleDashed,
@@ -62,7 +61,7 @@ export default function Processes(): ReactElement {
       header: () => <div className="text-left font-semibold">Status</div>,
       cell: ({ row }) => {
         const status = row.getValue('status') as string
-        
+
         return (
           <div>
             {status === 'running' && (
@@ -236,7 +235,7 @@ export default function Processes(): ReactElement {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
@@ -250,7 +249,7 @@ export default function Processes(): ReactElement {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>

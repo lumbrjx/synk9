@@ -79,6 +79,7 @@ async fn process_single_sensor(
             time: timestamp.clone(),
             value: sensor_value,
             key: sensor.label.clone(),
+            register: sensor.register.clone(),
             s_type: String::from("sensor"),
         };
         agent_guard
@@ -92,6 +93,7 @@ async fn process_single_sensor(
             value: sensor_value,
             key: sensor.label,
             s_type: String::from("general"),
+            register: sensor.register
         };
         agent_guard
             .send_json("monitoring_streamline", &modbus_data)

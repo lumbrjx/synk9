@@ -126,6 +126,7 @@ export class StreamManager {
 	handleData(streamId, streamName, agentId, flowNodes, data, id, process, alerts) {
 		// This is where you'd send to socket
 		if (data.agentId !== agentId) return;
+		console.log('the data', data)
 
 		for (const edge of flowNodes) {
 			const sensors = edge.data.sensor || [];
@@ -134,6 +135,7 @@ export class StreamManager {
 				if (sensor.sensor_id === data.sensor_id) {
 					sensor.sensorValue = data.value;
 					sensor.name = data.label;
+					sensor.register = data.register
 
 					if (specialSensor.counter_sensor !== undefined) {
 						specialSensor.counter_sensor = {
@@ -166,8 +168,6 @@ export class StreamManager {
 				}
 
 			}
-
-
 
 			this.eventBus.emit('step:running', {
 				id,
