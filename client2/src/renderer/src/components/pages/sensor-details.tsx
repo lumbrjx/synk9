@@ -14,6 +14,7 @@ const formSchema = z.object({
   name: z.string().min(2),
   description: z.string().min(2),
   register: z.string().min(1),
+  agentId: z.string().min(1)
 })
 
 export default function SensorDetails(): ReactElement {
@@ -36,6 +37,7 @@ export default function SensorDetails(): ReactElement {
     name: '',
     description: '',
     register: "",
+    agentId: "",
   })
 
   const {
@@ -91,6 +93,7 @@ export default function SensorDetails(): ReactElement {
         name: sensors.name || '',
         description: sensors.description || '',
         register: sensors.register || "",
+        agentId: sensors.agentId || "",
       })
     }
     if (isError) {
@@ -117,7 +120,7 @@ export default function SensorDetails(): ReactElement {
     deleteMutation.mutate()
   }
   const onSubmit = (data: z.infer<typeof formSchema>): void => {
-    console.log(data)
+    console.log("data to sub",data)
     createMutation.mutate(data)
   }
 

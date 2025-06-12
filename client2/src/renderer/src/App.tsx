@@ -12,7 +12,7 @@ import AgentDetails from "./components/pages/agent-details";
 import { toast, Toaster } from "sonner";
 import { io } from 'socket.io-client';
 import { baseUrl } from "./config";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Alerts from "./components/pages/alerts";
 import AlertDetails from "./components/pages/alert-details";
 
@@ -24,7 +24,10 @@ export const socket = io(baseUrl, {
 });
 
 type AlertTypeLiteral = "normal" | "scheduled" | "offline" | "incident" | "breakdown";
+
 function App() {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
   useEffect(() => {
     const handleDiscon = () => {
       toast.error("Lost connection to agent..");
@@ -66,24 +69,42 @@ function App() {
   }, [socket]);
 
   return (
-    <div className="flex font-lexend bg-primary text-xl w-screen">
-      <Sidebar />
-      <div className="text-secondary w-screen">
-
-        <Toaster />
-        <Routes>
-          <Route path="/" element={<ProtectedRoute allowedRoles={[]}><Dashboard /></ProtectedRoute>} />
-          <Route path="/agents" element={<ProtectedRoute allowedRoles={[]}><Agents /></ProtectedRoute>} />
-          <Route path="/processes" element={<ProtectedRoute allowedRoles={[]}><Processes /></ProtectedRoute>} />
-          <Route path="/details/:id" element={<ProtectedRoute allowedRoles={[]}><Details /></ProtectedRoute>} />
-          <Route path="/agent/details/:id" element={<ProtectedRoute allowedRoles={[]}><AgentDetails /></ProtectedRoute>} />
-          <Route path="/sensor/details/:id" element={<ProtectedRoute allowedRoles={[]}><SensorDetails /></ProtectedRoute>} />
-          <Route path="/sensors" element={<ProtectedRoute allowedRoles={[]}><Sensors /></ProtectedRoute>} />
-          <Route path="/alert-topic" element={<ProtectedRoute allowedRoles={[]}><Alerts /></ProtectedRoute>} />
-          <Route path="/alert-topic/details/:id" element={<ProtectedRoute allowedRoles={[]}><AlertDetails /></ProtectedRoute>} />
-        </Routes>
-
-      </div>
+    <div className="flex min-h-screen bg-gray-900 text-gray-100 font-lexend">
+      <Sidebar onCollapse={setIsSidebarCollapsed} />
+      
+      {/* Main Content Area */}
+      <main 
+        className={`
+          flex-1 transition-all duration-300 ease-in-out
+          ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}
+        `}
+      >
+        <div className="p-6">
+          <Toaster 
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: '#1F2937',
+                color: '#F3F4F6',
+                border: '1px solid #374151'
+              },
+              className: 'bg-gray-800 text-gray-100',
+            }}
+          />
+          
+          <Routes>
+            <Route path="/" element={<ProtectedRoute allowedRoles={[]}><Dashboard /></ProtectedRoute>} />
+            <Route path="/agents" element={<ProtectedRoute allowedRoles={[]}><Agents /></ProtectedRoute>} />
+            <Route path="/processes" element={<ProtectedRoute allowedRoles={[]}><Processes /></ProtectedRoute>} />
+            <Route path="/details/:id" element={<ProtectedRoute allowedRoles={[]}><Details /></ProtectedRoute>} />
+            <Route path="/agent/details/:id" element={<ProtectedRoute allowedRoles={[]}><AgentDetails /></ProtectedRoute>} />
+            <Route path="/sensor/details/:id" element={<ProtectedRoute allowedRoles={[]}><SensorDetails /></ProtectedRoute>} />
+            <Route path="/sensors" element={<ProtectedRoute allowedRoles={[]}><Sensors /></ProtectedRoute>} />
+            <Route path="/alert-topic" element={<ProtectedRoute allowedRoles={[]}><Alerts /></ProtectedRoute>} />
+            <Route path="/alert-topic/details/:id" element={<ProtectedRoute allowedRoles={[]}><AlertDetails /></ProtectedRoute>} />
+          </Routes>
+        </div>
+      </main>
     </div>
   );
 }

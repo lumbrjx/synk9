@@ -1,8 +1,9 @@
 import { useAxiosQuery } from "@/hooks/get";
 import { query } from "@/queries/agent";
-import { useEffect, useState, useMemo } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
-import { Calendar, Clock, Play, Pause, RotateCcw } from "lucide-react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ReferenceArea } from "recharts";
+import { Calendar, Clock, Play, Pause, RotateCcw, Download, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type SensorData = {
   key: string;
@@ -38,6 +39,11 @@ export default function RealTimeChart({
   const [data, setData] = useState<DataPoint[]>([]);
   const [sensorKeys, setSensorKeys] = useState<Set<string>>(new Set());
   const [isPaused, setIsPaused] = useState(initialPaused);
+  const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+  const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
+  const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
+  const [zoomDomain, setZoomDomain] = useState<[number, number] | null>(null);
+  const chartRef = useRef<any>(null);
 
   // Timestamp picker state
   const [isHistoricalMode, setIsHistoricalMode] = useState(false);
@@ -221,6 +227,48 @@ export default function RealTimeChart({
     setIsPaused(!isPaused);
   };
 
+  const exportToCSV = () => {
+    if (data.length === 0) return;
+
+    // Prepare headers
+    const headers = ['Timestamp'];
+    if (selectedSensor) {
+      headers.push(selectedSensor);
+    } else {
+      Array.from(sensorKeys).forEach(key => headers.push(key));
+    }
+
+    // Prepare rows
+    const rows = data.map(point => {
+      const row = [new Date(point.x).toISOString()];
+      if (selectedSensor) {
+        row.push(point[selectedSensor]?.toString() || '');
+      } else {
+        Array.from(sensorKeys).forEach(key => {
+          row.push(point[key]?.toString() || '');
+        });
+      }
+      return row;
+    });
+
+    // Convert to CSV
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.join(','))
+    ].join('\n');
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `sensor_data_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Custom tooltip to show all sensor values at a timestamp
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -240,8 +288,57 @@ export default function RealTimeChart({
     return null;
   };
 
+  const handleMouseDown = (e: any) => {
+    if (!isPaused) return;
+    setRefAreaLeft(e.activeLabel);
+  };
+
+  const handleMouseMove = (e: any) => {
+    if (!isPaused || !refAreaLeft) return;
+    setRefAreaRight(e.activeLabel);
+  };
+
+  const handleMouseUp = () => {
+    if (!isPaused || !refAreaLeft || !refAreaRight) return;
+
+    const left = parseInt(refAreaLeft);
+    const right = parseInt(refAreaRight);
+
+    if (left === right) {
+      setRefAreaLeft(null);
+      setRefAreaRight(null);
+      return;
+    }
+
+    setZoomDomain([Math.min(left, right), Math.max(left, right)]);
+    setRefAreaLeft(null);
+    setRefAreaRight(null);
+  };
+
+  const handleZoomReset = () => {
+    setZoomDomain(null);
+  };
+
+  const handleZoomIn = () => {
+    if (!zoomDomain) return;
+    const [left, right] = zoomDomain;
+    const range = right - left;
+    const newRange = range * 0.5;
+    const center = (left + right) / 2;
+    setZoomDomain([center - newRange / 2, center + newRange / 2]);
+  };
+
+  const handleZoomOut = () => {
+    if (!zoomDomain) return;
+    const [left, right] = zoomDomain;
+    const range = right - left;
+    const newRange = range * 2;
+    const center = (left + right) / 2;
+    setZoomDomain([center - newRange / 2, center + newRange / 2]);
+  };
+
   return (
-    <div className="w-full p-4 space-y-4 bg-gray-900 text-white ">
+    <div className="w-full p-4 space-y-4 text-white ">
       {/* Control Panel */}
       <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
         <div className="flex flex-wrap items-center gap-4 mb-4">
@@ -269,11 +366,86 @@ export default function RealTimeChart({
                 Back to Real-time
               </button>
             )}
+
+            {/* Zoom Controls - Only show when paused */}
+            {isPaused && (
+              <div className="flex items-center gap-2 ml-2">
+                <button
+                  onClick={handleZoomIn}
+                  disabled={!zoomDomain}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    !zoomDomain
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-900 text-blue-300 hover:bg-blue-800 border border-blue-700'
+                  }`}
+                >
+                  <ZoomIn size={16} />
+                  Zoom In
+                </button>
+                <button
+                  onClick={handleZoomOut}
+                  disabled={!zoomDomain}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    !zoomDomain
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-900 text-blue-300 hover:bg-blue-800 border border-blue-700'
+                  }`}
+                >
+                  <ZoomOut size={16} />
+                  Zoom Out
+                </button>
+                <button
+                  onClick={handleZoomReset}
+                  disabled={!zoomDomain}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    !zoomDomain
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      : 'bg-blue-900 text-blue-300 hover:bg-blue-800 border border-blue-700'
+                  }`}
+                >
+                  <Maximize2 size={16} />
+                  Reset Zoom
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-sm text-gray-300">
             <div className={`w-3 h-3 rounded-full ${isHistoricalMode ? 'bg-orange-500' : isPaused ? 'bg-red-500' : 'bg-green-500'}`} />
             {isHistoricalMode ? 'Historical Mode' : isPaused ? 'Paused' : 'Live'}
+          </div>
+
+          {/* Sensor Selector and Export Button */}
+          <div className="ml-auto flex items-center gap-2">
+            <Select
+              value={selectedSensor || "all"}
+              onValueChange={(value) => setSelectedSensor(value === "all" ? null : value)}
+            >
+              <SelectTrigger className="w-[200px] bg-gray-700 border-gray-600 text-white">
+                <SelectValue placeholder="Select Sensor" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 border-gray-700">
+                <SelectItem value="all" className="text-white">All Sensors</SelectItem>
+                {Array.from(sensorKeys).map((key) => (
+                  <SelectItem key={key} value={key} className="text-white">
+                    {key}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <button
+              onClick={exportToCSV}
+              disabled={data.length === 0}
+              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                data.length === 0
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-green-900 text-green-300 hover:bg-green-800 border border-green-700'
+              }`}
+            >
+              <Download size={16} />
+              Export CSV
+            </button>
           </div>
         </div>
 
@@ -347,15 +519,19 @@ export default function RealTimeChart({
       <div className="h-96 bg-gray-800 border border-gray-700 rounded-lg p-2">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
+            ref={chartRef}
             data={data}
             margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis
               dataKey="x"
               type="number"
               scale="time"
-              domain={xAxisDomain}
+              domain={zoomDomain || xAxisDomain}
               tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()}
               stroke="#9CA3AF"
               tick={{ fill: '#9CA3AF' }}
@@ -367,26 +543,51 @@ export default function RealTimeChart({
             />
             <Tooltip content={<CustomTooltip />} />
 
-            {/* Render a line for each unique sensor key */}
-            {Array.from(sensorKeys).map((key) => (
+            {/* Reference area for zoom selection */}
+            {refAreaLeft && refAreaRight && (
+              <ReferenceArea
+                x1={parseInt(refAreaLeft)}
+                x2={parseInt(refAreaRight)}
+                strokeOpacity={0.3}
+                fill="#8884d8"
+                fillOpacity={0.3}
+              />
+            )}
+
+            {/* Render lines based on selected sensor */}
+            {selectedSensor ? (
               <Line
-                key={key}
+                key={selectedSensor}
                 type="monotone"
-                dataKey={key}
-                stroke={keyColorMap[key]}
+                dataKey={selectedSensor}
+                stroke={keyColorMap[selectedSensor]}
                 strokeWidth={2}
                 dot={false}
                 connectNulls={false}
                 isAnimationActive={false}
-                name={key}
+                name={selectedSensor}
               />
-            ))}
+            ) : (
+              Array.from(sensorKeys).map((key) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={keyColorMap[key]}
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                  name={key}
+                />
+              ))
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* Legend */}
-      {sensorKeys.size > 0 && (
+      {/* Legend - Only show when no sensor is selected */}
+      {!selectedSensor && sensorKeys.size > 0 && (
         <div className="flex flex-wrap gap-4 justify-center bg-gray-800 border border-gray-700 p-3 rounded-lg">
           {Array.from(sensorKeys).map((key) => (
             <div key={key} className="flex items-center gap-2">

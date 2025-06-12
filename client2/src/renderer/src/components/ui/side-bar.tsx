@@ -3,7 +3,7 @@ import {
 	FaTachometerAlt, FaCogs, FaUsers, FaTools, FaTasks, FaAngleLeft, FaAngleRight,
     FaBellSlash
 } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const navItems = [
 	{ name: 'Dashboard', route: '/', icon: <FaTachometerAlt />, key: 'dashboard' },
@@ -19,15 +19,25 @@ const bottomItems = [
 	{ name: 'Settings', icon: <FaCogs />, key: 'settings' },
 ];
 
-const Sidebar: React.FC = () => {
-	const [selected, setSelected] = useState<string | null>(null);
+interface SidebarProps {
+  onCollapse?: (collapsed: boolean) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ onCollapse }) => {
 	const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+	const location = useLocation();
 
-	const handleItemClick = (itemKey: string) => setSelected(itemKey);
+	const toggleSidebar = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    onCollapse?.(newState);
+  };
 
-	const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-
-	const handleResize = () => setIsCollapsed(window.innerWidth < 870);
+	const handleResize = () => {
+    const shouldCollapse = window.innerWidth < 870;
+    setIsCollapsed(shouldCollapse);
+    onCollapse?.(shouldCollapse);
+  };
 
 	useEffect(() => {
 		handleResize();
@@ -35,23 +45,37 @@ const Sidebar: React.FC = () => {
 		return () => window.removeEventListener('resize', handleResize);
 	}, []);
 
-	const getHoverClass = () =>
-		isCollapsed && selected ? '' : 'hover:text-purple-100 hover:opacity-80 ';
-
-	const getSelectedClass = (key: string) =>
-		window.innerWidth >= 870 && selected === key ? 'text-purple-300' : '';
+	const isActive = (route: string) => location.pathname === route;
 
 	const renderItem = (
 		item: { name: string; route?: string; icon: JSX.Element; key: string },
 		isLink = true
 	) => {
+		const isItemActive = item.route ? isActive(item.route) : false;
+		
 		const content = (
 			<div
-				className={`flex mb-2 items-center rounded-[10px] cursor-pointer pr-5 pl-5 py-4 transition duration-200 ${getSelectedClass(item.key)} ${getHoverClass()}`}
-				onClick={() => handleItemClick(item.key)}
+				className={`
+					flex items-center rounded-lg cursor-pointer px-4 py-3
+					transition-all duration-200 ease-in-out
+					${isItemActive 
+						? 'bg-purple-900/50 text-purple-300' 
+						: 'text-gray-400 hover:bg-gray-700/50 hover:text-purple-300'
+					}
+					${isCollapsed ? 'justify-center' : 'justify-start'}
+				`}
 			>
-				<span className="mr-2">{item.icon}</span>
-				<span className={`transition-opacity duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}>{item.name}</span>
+				<span className={`${isCollapsed ? 'text-xl' : 'text-lg mr-3'}`}>
+					{item.icon}
+				</span>
+				<span 
+					className={`
+						transition-all duration-200 ease-in-out whitespace-nowrap
+						${isCollapsed ? 'opacity-0 w-0' : 'opacity-100 w-auto'}
+					`}
+				>
+					{item.name}
+				</span>
 			</div>
 		);
 
@@ -68,20 +92,44 @@ const Sidebar: React.FC = () => {
 
 	return (
 		<div
-			className={`h-screen bg-[#1b1b1d] text-md text-[#808191] flex flex-col justify-between items-center transition-all duration-100 ${isCollapsed ? 'w-16' : 'w-1/6'
-				}`}
+			className={`
+				fixed left-0 top-0 h-screen
+				bg-gray-800 border-r border-gray-700
+				flex flex-col justify-between
+				transition-all duration-300 ease-in-out
+				${isCollapsed ? 'w-16' : 'w-64'}
+				z-50
+			`}
 		>
-			<button className="md:hidden p-2" onClick={toggleSidebar}>
-				{isCollapsed ? <FaAngleRight /> : <FaAngleLeft />}
-			</button>
+			<div className="flex flex-col flex-grow">
+				{/* Toggle Button */}
+				<button 
+					onClick={toggleSidebar}
+					className="
+						p-3 m-2 rounded-lg
+						text-gray-400 hover:text-purple-300
+						hover:bg-gray-700/50
+						transition-colors duration-200
+						self-end
+					"
+				>
+					{isCollapsed ? <FaAngleRight /> : <FaAngleLeft />}
+				</button>
 
-			<ul className="space-y-2 mt-8 px-4 w-full">
-				{navItems.map(item => renderItem(item))}
-			</ul>
+				{/* Navigation Items */}
+				<nav className="flex-grow px-2 py-4">
+					<ul className="space-y-1">
+						{navItems.map(item => renderItem(item))}
+					</ul>
+				</nav>
 
-			<ul className="space-y-2 w-full mb-8 px-4">
-				{bottomItems.map(item => renderItem(item, false))}
-			</ul>
+				{/* Bottom Items */}
+				<div className="px-2 py-4 border-t border-gray-700">
+					<ul className="space-y-1">
+						{bottomItems.map(item => renderItem(item, false))}
+					</ul>
+				</div>
+			</div>
 		</div>
 	);
 };

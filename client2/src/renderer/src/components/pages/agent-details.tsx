@@ -49,12 +49,6 @@ export default function AgentDetails(): ReactElement {
     }
   })
 
-  const [defaultVal, setDefaultVal] = useState({
-    name: '',
-    description: '',
-    plcId: '',
-    locked: false
-  })
 
   const {
     data: sensors,
@@ -81,6 +75,14 @@ export default function AgentDetails(): ReactElement {
       retry: 10
     }
   })
+  const [defaultVal, setDefaultVal] = useState({
+    name: '',
+    description: '',
+    plcId: '',
+    locked: false,
+    agentId: ''
+  })
+
   useEffect(() => {
     console.log('Query status changed:', status)
     console.log('isLoading:', isLoading)
@@ -91,6 +93,7 @@ export default function AgentDetails(): ReactElement {
       setDefaultVal({
         name: sensors.name,
         description: sensors.description,
+        agentId: sensors.agentId,
         plcId: sensors.plcId,
         locked: sensors.locked
       })
@@ -115,7 +118,6 @@ export default function AgentDetails(): ReactElement {
     deleteMutation.mutate()
   }
   const onSubmit = (data: z.infer<typeof formSchema>): void => {
-    console.log(data)
     createMutation.mutate(data)
   }
 

@@ -12,6 +12,7 @@ const Logs: React.FC<LogsProps> = ({ socket }) => {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const isUserAtBottomRef = useRef(true);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Track if user is at the bottom
   useEffect(() => {
@@ -20,8 +21,8 @@ const Logs: React.FC<LogsProps> = ({ socket }) => {
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      // More generous tolerance and better calculation
-      const atBottom = Math.abs(scrollHeight - clientHeight - scrollTop) <= 5;
+      // More generous tolerance for bottom detection
+      const atBottom = scrollHeight - clientHeight - scrollTop < 50;
       isUserAtBottomRef.current = atBottom;
       setShowScrollButton(!atBottom);
     };
@@ -46,29 +47,43 @@ const Logs: React.FC<LogsProps> = ({ socket }) => {
     };
   }, [socket]);
 
-  // Auto-scroll effect - runs after logs update
+  // Auto-scroll effect with debouncing
   useEffect(() => {
-    if (isUserAtBottomRef.current && containerRef.current) {
-      // Use requestAnimationFrame to ensure DOM has updated
-      requestAnimationFrame(() => {
-        const container = containerRef.current;
-        if (container) {
-          container.scrollTo({
-            top: container.scrollHeight,
-            behavior: 'smooth'
-          });
-        }
-      });
+    if (!isUserAtBottomRef.current || !containerRef.current) return;
+
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
     }
+
+    // Set a new timeout to scroll
+    scrollTimeoutRef.current = setTimeout(() => {
+      const container = containerRef.current;
+      if (container) {
+        container.scrollTo({
+          top: container.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }, 100); // Small delay to batch rapid updates
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, [logs]);
 
   const scrollToBottom = () => {
     const container = containerRef.current;
     if (container) {
+      // Force immediate scroll without animation when button is clicked
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: 'smooth'
+        behavior: 'auto'
       });
+      isUserAtBottomRef.current = true;
+      setShowScrollButton(false);
     }
   };
 
