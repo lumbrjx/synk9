@@ -74,7 +74,13 @@ export class SensorService {
 			throw new Error(`Failed to update the agent with ID: ${id}`);
 		}
 
-		const agent = await this.agentService.findOne(id);
+		if (!updateSensorDto.agentId) {
+			throw new Error(`agent ID required: ${id}`);
+		}
+		const agent = await this.agentService.findOne(updateSensorDto.agentId as string);
+		if (!agent) {
+			throw new Error(`Failed to find the agent with ID: ${id}`);
+		}
 		this.eventBus.emit("sensor:updated", {
 			id,
 			label: updateSensorDto.name as string,

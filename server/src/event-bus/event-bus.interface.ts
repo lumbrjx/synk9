@@ -2,7 +2,7 @@ export interface AppEvents {
 	'user:created': { id: string; name: string };
 	'user:deleted': { id: string };
 	'agent:created': { id: string };
-	'agent:updated': { id: string };
+	'agent:updated': { id: string, locked?: boolean };
 	'agent:deleted': { id: string }
 	'agent:cleanup': { id: string }
 	'agent:disconnected': { processId: string }
@@ -39,6 +39,6 @@ export interface AppEvents {
 	'alert:alert': { id: string, agentId: string, data: any };
 	'step:running': { id: string, data: any, agentId: string };
 
-	'sensor:process-state-updated': { label: string, value: number, agentId: string, sensor_id: string, register:string };
+	'sensor:process-state-updated': { label: string, value: number, agentId: string, sensor_id: string, register: string };
 }
 

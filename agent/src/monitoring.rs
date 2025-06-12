@@ -20,6 +20,7 @@ pub async fn monitor_plc_loop(agent: Arc<Mutex<Agent>>) -> Result<(), AppError> 
             let state_lock = agent_lock.state.lock().await;
 
             if state_lock.paused_agent {
+                println!("im locekdd");
                 continue;
             }
 
@@ -27,7 +28,7 @@ pub async fn monitor_plc_loop(agent: Arc<Mutex<Agent>>) -> Result<(), AppError> 
         };
 
         if !sensors.is_empty() {
-            println!("Processing sensors: {:?}", sensors);
+            // println!("Processing sensors: {:?}", sensors);
             process_all_sensors(agent.clone(), sensors).await?;
         }
     }
@@ -71,7 +72,6 @@ async fn process_single_sensor(
             .map_err(|e| AppError::PlcError(e.to_string()))?;
 
     let timestamp = Local::now().format("%y/%m/%d %H:%M:%S").to_string();
-    println!("{} - Sensor {}: {}", timestamp, sensor.id, sensor_value);
 
     if sensor.s_type == "sensor" {
         let modbus_data = plc_io::ModbusData {

@@ -45,7 +45,7 @@ export class AgentService {
 		if (!updatedAgent.affected) {
 			throw new Error(`Failed to update the agent with ID: ${id}`);
 		}
-		this.eventBus.emit("agent:updated", { id });
+		this.eventBus.emit("agent:updated", { id, locked: updateAgentDto.locked });
 		return updatedAgent;
 	}
 

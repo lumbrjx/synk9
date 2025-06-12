@@ -46,6 +46,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.eventBus.on("sensor:updated").subscribe(this.sensorUpdated.bind(this));
 		this.eventBus.on("sensor:deleted").subscribe(this.sensorDeleted.bind(this));
 		this.eventBus.on("alert:alert").subscribe(this.dataAlert.bind(this));
+		this.eventBus.on("agent:updated").subscribe(this.agentUpdate.bind(this));
 
 	}
 
@@ -65,7 +66,6 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		for (const id of agentsIds) {
 			console.log(id);
 			const agent = await this.connectionStore.get(id);
-			console.log(agent)
 			if (agent?.metadata.userId === payload.agentFingerprint) {
 				console.log("foundnn")
 				agent?.socket.emit(event, payload);
@@ -79,6 +79,13 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		for (const id of agentsIds) {
 			const connection = await this.connectionStore.get(id);
 			connection?.socket.emit(channel, { [event]: payload });
+		}
+	}
+	async agentUpdate(payload: any) {
+		this.logger.log('Agent updated:', payload);
+		if (payload.locked) {
+						console.log("yes daddy")
+			await this.notifyAgentViaFingerprint("PauseAgent", payload);
 		}
 	}
 	async sensorUpdated(payload: any) {
