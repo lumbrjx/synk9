@@ -12,6 +12,7 @@ import { AlertTopicModule } from './alert-topic/alert-topic.module';
 import { ParsersService } from './parsers/parsers.service';
 import { LoggerService } from './logger/logger.service';
 import { LoggerModule } from './logger/logger.module';
+import { PredictorService } from './predictor/predictor.service';
 
 @Module({
 	imports: [
@@ -26,7 +27,7 @@ import { LoggerModule } from './logger/logger.module';
 		AlertTopicModule,
 		LoggerModule,
 	],
-	providers: [CordinatorGateway, ParsersService, LoggerService],
+	providers: [CordinatorGateway, ParsersService, LoggerService, PredictorService],
 	exports: [CordinatorGateway]
 })
 export class AppModule { }

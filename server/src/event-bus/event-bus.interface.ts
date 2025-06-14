@@ -37,6 +37,7 @@ export interface AppEvents {
 
 	'step:valid': { id: string, stepId: string, agentId: string };
 	'alert:alert': { id: string, agentId: string, data: any };
+	'alert:ai': { id: string, agentId: string, data: any };
 	'step:running': { id: string, data: any, agentId: string };
 
 	'sensor:process-state-updated': { label: string, value: number, agentId: string, sensor_id: string, register: string };

@@ -19,6 +19,7 @@ import { ProcessService } from 'src/process/process.service';
 import { SyncService } from './sync.service';
 import { StreamManager } from 'src/process-engine/stream.service';
 import { LoggerService } from 'src/logger/logger.service';
+import { PredictorService } from 'src/predictor/predictor.service';
 
 @WebSocketGateway({ cors: true })
 export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -46,6 +47,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.eventBus.on("sensor:updated").subscribe(this.sensorUpdated.bind(this));
 		this.eventBus.on("sensor:deleted").subscribe(this.sensorDeleted.bind(this));
 		this.eventBus.on("alert:alert").subscribe(this.dataAlert.bind(this));
+		this.eventBus.on("alert:ai").subscribe(this.aiAlert.bind(this));
 		this.eventBus.on("agent:updated").subscribe(this.agentUpdate.bind(this));
 
 	}
@@ -73,7 +75,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		}
 	}
 
-	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected" | "alert") {
+	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected" | "alert" | "ai") {
 		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
 
 		for (const id of agentsIds) {
@@ -84,7 +86,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	async agentUpdate(payload: any) {
 		this.logger.log('Agent updated:', payload);
 		if (payload.locked) {
-						console.log("yes daddy")
+			console.log("yes daddy")
 			await this.notifyAgentViaFingerprint("PauseAgent", payload);
 		}
 	}
@@ -99,6 +101,10 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	async cycleDone(payload: any) {
 		this.logger.log('process Cycle Done:', payload);
 		await this.notifyClients("process:cycle-done", payload, 'step-data');
+	}
+	async aiAlert(payload: any) {
+		// this.logger.log('Step Running:', payload.data.nodes[0].data);
+		await this.notifyClients("alert:ai", payload, 'ai');
 	}
 	async dataAlert(payload: any) {
 		// this.logger.log('Step Running:', payload.data.nodes[0].data);

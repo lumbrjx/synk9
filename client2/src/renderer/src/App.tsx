@@ -32,7 +32,12 @@ function App() {
     const handleDiscon = () => {
       toast.error("Lost connection to agent..");
     };
+    const handleAiMessage = (message: any) => {
 
+      const alert = message["alert:ai"].data;
+
+       toast.warning(`Ai diagnostics: ${alert.processName} may Fail with precision of ${alert.percentage} | ${alert.sensor} : ${alert.value}`);
+    };
     const handleMessage = (message: any) => {
       console.log("the data is here", message)
 
@@ -61,26 +66,28 @@ function App() {
 
     socket.on("agent-disconnected", handleDiscon)
     socket.on('alert', handleMessage);
+    socket.on('ai', handleAiMessage);
 
     return () => {
       socket.off("agent-disconnected", handleDiscon)
       socket.off('alert', handleMessage);
+      socket.off('ai', handleAiMessage);
     };
   }, [socket]);
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-100 font-lexend">
       <Sidebar onCollapse={setIsSidebarCollapsed} />
-      
+
       {/* Main Content Area */}
-      <main 
+      <main
         className={`
           flex-1 transition-all duration-300 ease-in-out
           ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
         <div className="p-6">
-          <Toaster 
+          <Toaster
             position="top-right"
             toastOptions={{
               style: {
@@ -91,7 +98,7 @@ function App() {
               className: 'bg-gray-800 text-gray-100',
             }}
           />
-          
+
           <Routes>
             <Route path="/" element={<ProtectedRoute allowedRoles={[]}><Dashboard /></ProtectedRoute>} />
             <Route path="/agents" element={<ProtectedRoute allowedRoles={[]}><Agents /></ProtectedRoute>} />

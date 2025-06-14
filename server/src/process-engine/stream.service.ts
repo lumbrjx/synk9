@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Process } from 'src/entities';
 import { Repository } from 'typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
+import { PredictorService } from 'src/predictor/predictor.service';
 
 @Global()
 @Injectable()
@@ -17,6 +18,8 @@ export class StreamManager {
 		@InjectRepository(Process)
 		private readonly processRepository: Repository<Process>,
 		private readonly eventBus: EventBusService,
+		private readonly predictorService: PredictorService,
+
 
 	) {
 		this.streams = new Map();
@@ -78,7 +81,8 @@ export class StreamManager {
 			name,
 			killSwitch,
 			subscription,
-			status: 'active'
+			status: 'active',
+			buffer: []
 		});
 
 		console.log(`Created stream ${streamId}: ${name}`);
@@ -123,11 +127,34 @@ export class StreamManager {
 	}
 
 	// Handle data from streams (customize this)
-	handleData(streamId, streamName, agentId, flowNodes, data, id, process, alerts) {
+	async handleData(streamId, streamName, agentId, flowNodes, data, id, process, alerts) {
 		// This is where you'd send to socket
 		if (data.agentId !== agentId) return;
-		console.log('the data', data)
+		const stream = this.streams.get(streamId);
+		if (!stream) return;
+		const value = parseFloat(data.value);
+		if (isNaN(value)) return;
 
+		stream.buffer.push(value);
+		console.log("buff", stream.buffer)
+		if (stream.buffer.length === 9) {
+			console.log("heey")
+			const batch = stream.buffer.splice(0, 9);
+			const predict = await this.predictorService.predict(batch);
+
+			if (predict && predict.predicted === 'Fail') {
+				this.eventBus.emit('alert:ai', {
+					id,
+					agentId,
+					data: {
+						processName: process.name,
+						percentage: predict.percentage,
+						sensor: data.label,
+						value: data.value,
+					},
+				});
+			}
+		}
 		for (const edge of flowNodes) {
 			const sensors = edge.data.sensor || [];
 			const specialSensor = edge.data.propSensors || {};
@@ -156,13 +183,12 @@ export class StreamManager {
 
 			}
 			for (const alert of alerts) {
-				console.log("im checkin")
 				for (const rule of alert.rules) {
 					if (rule.id === data.sensor_id && parseInt(rule.expectedValue) <= parseInt(data.value)) {
 						this.eventBus.emit('alert:alert', {
 							id,
 							agentId,
-							data: { processId: process.id, nodes: flowNodes, alert: alert},
+							data: { processId: process.id, nodes: flowNodes, alert: alert },
 						});
 					}
 				}

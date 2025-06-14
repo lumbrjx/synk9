@@ -8,6 +8,7 @@ import { ProcessEngineService } from './engine.service';
 import { GlobalProcessService } from './processor.service';
 import { GlobalProcessWorker } from './processor.worker';
 import { StreamManager } from './stream.service';
+import { PredictorService } from 'src/predictor/predictor.service';
 
 @Global()
 @Module({
@@ -16,7 +17,7 @@ import { StreamManager } from './stream.service';
 		name: 'global-process',
 	}),
 	],
-	providers: [ProcessEngineService, GlobalProcessService, GlobalProcessWorker, StreamManager],
+	providers: [ProcessEngineService, GlobalProcessService, GlobalProcessWorker, StreamManager, PredictorService],
 	exports: [ProcessEngineService, GlobalProcessService, GlobalProcessWorker, StreamManager],
 })
 export class ProcessEngineModule { }
