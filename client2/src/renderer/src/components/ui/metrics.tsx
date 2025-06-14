@@ -54,7 +54,7 @@ export default function Metrics() {
         <RealTimeChart socket={socket} />
       </div>
 
-      <div className="flex flex-col md:flex-row pt-2 px-5 gap-16">
+      <div className="flex flex-col md:flex-row px-5 gap-16">
         <div className="w-full md:w-2/3">
           <Logs socket={socket} />
         </div>

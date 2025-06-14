@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import "./App.css";
 import Sidebar from "./components/ui/side-bar";
 import ProtectedRoute from "./components/protected-route";
@@ -9,12 +9,15 @@ import Details from "./components/pages/details";
 import Sensors from "./components/pages/sensors";
 import SensorDetails from "./components/pages/sensor-details";
 import AgentDetails from "./components/pages/agent-details";
+import SettingsPage from "./components/pages/settings";
+import LoginPage from "./components/pages/login";
 import { toast, Toaster } from "sonner";
 import { io } from 'socket.io-client';
 import { baseUrl } from "./config";
 import { useEffect, useState } from "react";
 import Alerts from "./components/pages/alerts";
 import AlertDetails from "./components/pages/alert-details";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 export const socket = io(baseUrl, {
   auth: {
@@ -25,18 +28,21 @@ export const socket = io(baseUrl, {
 
 type AlertTypeLiteral = "normal" | "scheduled" | "offline" | "incident" | "breakdown";
 
-function App() {
+function AppContent() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleDiscon = () => {
       toast.error("Lost connection to agent..");
     };
     const handleAiMessage = (message: any) => {
+      // Check if AI diagnostics is enabled
+      const isAiDiagnosticsEnabled = localStorage.getItem('aiDiagnostics') !== 'false';
+      if (!isAiDiagnosticsEnabled) return;
 
       const alert = message["alert:ai"].data;
-
-       toast.warning(`Ai diagnostics: ${alert.processName} may Fail with precision of ${alert.percentage} | ${alert.sensor} : ${alert.value}`);
+      toast.warning(`Ai diagnostics: ${alert.processName} may Fail with precision of ${alert.percentage} | ${alert.sensor} : ${alert.value}`);
     };
     const handleMessage = (message: any) => {
       console.log("the data is here", message)
@@ -77,18 +83,18 @@ function App() {
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-gray-100 font-lexend">
-      <Sidebar onCollapse={setIsSidebarCollapsed} />
+      {isAuthenticated && <Sidebar onCollapse={setIsSidebarCollapsed} />}
 
       {/* Main Content Area */}
       <main
         className={`
           flex-1 transition-all duration-300 ease-in-out
-          ${isSidebarCollapsed ? 'ml-16' : 'ml-64'}
+          ${isAuthenticated ? (isSidebarCollapsed ? 'ml-16' : 'ml-64') : ''}
         `}
       >
         <div className="p-6">
           <Toaster
-            position="top-right"
+            position="bottom-right"
             toastOptions={{
               style: {
                 background: '#1F2937',
@@ -100,7 +106,19 @@ function App() {
           />
 
           <Routes>
-            <Route path="/" element={<ProtectedRoute allowedRoles={[]}><Dashboard /></ProtectedRoute>} />
+            <Route
+              path="/"
+              element={
+                isAuthenticated ? (
+                  <ProtectedRoute allowedRoles={[]}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route path="/login" element={!isAuthenticated ? <LoginPage /> : <Navigate to="/" />} />
             <Route path="/agents" element={<ProtectedRoute allowedRoles={[]}><Agents /></ProtectedRoute>} />
             <Route path="/processes" element={<ProtectedRoute allowedRoles={[]}><Processes /></ProtectedRoute>} />
             <Route path="/details/:id" element={<ProtectedRoute allowedRoles={[]}><Details /></ProtectedRoute>} />
@@ -109,10 +127,19 @@ function App() {
             <Route path="/sensors" element={<ProtectedRoute allowedRoles={[]}><Sensors /></ProtectedRoute>} />
             <Route path="/alert-topic" element={<ProtectedRoute allowedRoles={[]}><Alerts /></ProtectedRoute>} />
             <Route path="/alert-topic/details/:id" element={<ProtectedRoute allowedRoles={[]}><AlertDetails /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute allowedRoles={[]}><SettingsPage /></ProtectedRoute>} />
           </Routes>
         </div>
       </main>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

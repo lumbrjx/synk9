@@ -35,13 +35,13 @@ export function DataTable<TData, TValue>({
     <div className="rounded-md border w-full overflow-hidden">
       <ScrollArea className="w-full overflow-hidden" style={{ maxHeight }}>
         <Table className="w-full">
-          <TableHeader className="bg-primary sticky top-0 z-10">
+          <TableHeader className="sticky top-0 z-10 hover:bg-transparent">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className='hover:bg-transparent'>
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="text-purple-300 bg-primary"
+                    className="text-gray-400 bg-transparent hover:bg-transparent"
                   >
                     {header.isPlaceholder
                       ? null

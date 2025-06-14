@@ -13,6 +13,7 @@ import { ParsersService } from './parsers/parsers.service';
 import { LoggerService } from './logger/logger.service';
 import { LoggerModule } from './logger/logger.module';
 import { PredictorService } from './predictor/predictor.service';
+import { AccountModule } from './account/account.module';
 
 @Module({
 	imports: [
@@ -26,6 +27,7 @@ import { PredictorService } from './predictor/predictor.service';
 		CordinatorModule,
 		AlertTopicModule,
 		LoggerModule,
+		AccountModule,
 	],
 	providers: [CordinatorGateway, ParsersService, LoggerService, PredictorService],
 	exports: [CordinatorGateway]

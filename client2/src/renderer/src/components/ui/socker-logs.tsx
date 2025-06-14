@@ -91,7 +91,7 @@ const Logs: React.FC<LogsProps> = ({ socket }) => {
     <div className="relative">
       <div
         ref={containerRef}
-        className="h-64 overflow-y-auto text-purple-300 font-mono p-4 rounded-lg shadow bg-gray-800"
+        className="h-60 overflow-y-auto text-purple-300 font-mono p-4 rounded-lg shadow bg-gray-800"
       >
         {logs.map((log, idx) => (
           <div key={idx} className="whitespace-pre-wrap">

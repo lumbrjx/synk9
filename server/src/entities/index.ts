@@ -1,4 +1,5 @@
 export * from "./agent.entity"
+export * from "./account.entity"
 export * from "./rule.entity"
 export * from "./user.entity"
 export * from "./sensor.entity"

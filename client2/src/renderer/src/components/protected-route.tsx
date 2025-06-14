@@ -1,16 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, ReactElement } from 'react';
 import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
-	children: JSX.Element;
+	children: ReactElement;
 	allowedRoles?: string[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-	// fix later
-	const role = '';
-	const token = 'hhh';
 	const [isLoading, setIsLoading] = useState(true);
+	const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
 
 	useEffect(() => {
 		const timer = setTimeout(() => {
@@ -23,12 +21,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 		return null;
 	}
 
-	if (!token) {
+	if (!isAuthenticated) {
 		return <Navigate to="/login" replace />;
 	}
 
-	if (allowedRoles && allowedRoles.length > 0 && role && !allowedRoles.includes(role)) {
-		return <Navigate to="/unauthorized" replace />;
+	if (allowedRoles && allowedRoles.length > 0) {
+		// Role check logic can be added here later
+		return children;
 	}
 
 	return children;
