@@ -39,7 +39,7 @@ export default function RealTimeChart({
   const [data, setData] = useState<DataPoint[]>([]);
   const [sensorKeys, setSensorKeys] = useState<Set<string>>(new Set());
   const [isPaused, setIsPaused] = useState(initialPaused);
-  const [selectedSensor, setSelectedSensor] = useState<string | null>(null);
+  const [selectedSensors, setSelectedSensors] = useState<Set<string>>(new Set());
   const [refAreaLeft, setRefAreaLeft] = useState<string | null>(null);
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
   const [zoomDomain, setZoomDomain] = useState<[number, number] | null>(null);
@@ -232,8 +232,8 @@ export default function RealTimeChart({
 
     // Prepare headers
     const headers = ['Timestamp'];
-    if (selectedSensor) {
-      headers.push(selectedSensor);
+    if (selectedSensors.size > 0) {
+      Array.from(selectedSensors).forEach(key => headers.push(key));
     } else {
       Array.from(sensorKeys).forEach(key => headers.push(key));
     }
@@ -241,8 +241,10 @@ export default function RealTimeChart({
     // Prepare rows
     const rows = data.map(point => {
       const row = [new Date(point.x).toISOString()];
-      if (selectedSensor) {
-        row.push(point[selectedSensor]?.toString() || '');
+      if (selectedSensors.size > 0) {
+        Array.from(selectedSensors).forEach(key => {
+          row.push(point[key]?.toString() || '');
+        });
       } else {
         Array.from(sensorKeys).forEach(key => {
           row.push(point[key]?.toString() || '');
@@ -337,6 +339,8 @@ export default function RealTimeChart({
     setZoomDomain([center - newRange / 2, center + newRange / 2]);
   };
 
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
+
   return (
     <div className="w-full p-4 space-y-4 text-white ">
       {/* Control Panel */}
@@ -417,22 +421,63 @@ export default function RealTimeChart({
 
           {/* Sensor Selector and Export Button */}
           <div className="ml-auto flex items-center gap-2">
-            <Select
-              value={selectedSensor || "all"}
-              onValueChange={(value) => setSelectedSensor(value === "all" ? null : value)}
-            >
-              <SelectTrigger className="w-[200px] bg-gray-700 border-gray-600 text-white">
-                <SelectValue placeholder="Select Sensor" />
-              </SelectTrigger>
-              <SelectContent className="bg-gray-800 border-gray-700">
-                <SelectItem value="all" className="text-white">All Sensors</SelectItem>
-                {Array.from(sensorKeys).map((key) => (
-                  <SelectItem key={key} value={key} className="text-white">
-                    {key}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <button
+                onClick={() => setIsSelectOpen(!isSelectOpen)}
+                className="w-[200px] bg-gray-700 border border-gray-600 text-white px-3 py-2 rounded-md flex items-center justify-between"
+              >
+                <span className="truncate">
+                  {selectedSensors.size === 0 ? 'Select Sensors' : 
+                   selectedSensors.size === 1 ? Array.from(selectedSensors)[0] :
+                   `${selectedSensors.size} sensors selected`}
+                </span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isSelectOpen && (
+                <div className="absolute z-10 w-[200px] mt-1 bg-gray-800 border border-gray-700 rounded-md shadow-lg">
+                  <div className="p-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedSensors.size === sensorKeys.size}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedSensors(new Set(sensorKeys));
+                          } else {
+                            setSelectedSensors(new Set());
+                          }
+                        }}
+                        className="rounded border-gray-600 text-blue-500 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-300">Select All</span>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                      {Array.from(sensorKeys).map((key) => (
+                        <div key={key} className="flex items-center gap-2 py-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedSensors.has(key)}
+                            onChange={(e) => {
+                              const newSelected = new Set(selectedSensors);
+                              if (e.target.checked) {
+                                newSelected.add(key);
+                              } else {
+                                newSelected.delete(key);
+                              }
+                              setSelectedSensors(newSelected);
+                            }}
+                            className="rounded border-gray-600 text-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-sm text-gray-300">{key}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             <button
               onClick={exportToCSV}
@@ -555,18 +600,20 @@ export default function RealTimeChart({
             )}
 
             {/* Render lines based on selected sensor */}
-            {selectedSensor ? (
-              <Line
-                key={selectedSensor}
-                type="monotone"
-                dataKey={selectedSensor}
-                stroke={keyColorMap[selectedSensor]}
-                strokeWidth={2}
-                dot={false}
-                connectNulls={false}
-                isAnimationActive={false}
-                name={selectedSensor}
-              />
+            {selectedSensors.size > 0 ? (
+              Array.from(selectedSensors).map((key) => (
+                <Line
+                  key={key}
+                  type="monotone"
+                  dataKey={key}
+                  stroke={keyColorMap[key]}
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls={false}
+                  isAnimationActive={false}
+                  name={key}
+                />
+              ))
             ) : (
               Array.from(sensorKeys).map((key) => (
                 <Line
@@ -587,7 +634,19 @@ export default function RealTimeChart({
       </div>
 
       {/* Legend - Only show when no sensor is selected */}
-      {!selectedSensor && sensorKeys.size > 0 && (
+      {selectedSensors.size > 0 ? (
+        <div className="flex flex-wrap gap-4 justify-center bg-gray-800 border border-gray-700 p-3 rounded-lg">
+          {Array.from(selectedSensors).map((key) => (
+            <div key={key} className="flex items-center gap-2">
+              <div
+                className="w-4 h-0.5 rounded"
+                style={{ backgroundColor: keyColorMap[key] }}
+              />
+              <span className="text-sm text-gray-200">{key}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
         <div className="flex flex-wrap gap-4 justify-center bg-gray-800 border border-gray-700 p-3 rounded-lg">
           {Array.from(sensorKeys).map((key) => (
             <div key={key} className="flex items-center gap-2">
