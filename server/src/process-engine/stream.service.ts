@@ -182,14 +182,54 @@ export class StreamManager {
 				}
 
 			}
+
 			for (const alert of alerts) {
 				for (const rule of alert.rules) {
-					if (rule.id === data.sensor_id && parseInt(rule.expectedValue) <= parseInt(data.value)) {
-						this.eventBus.emit('alert:alert', {
-							id,
-							agentId,
-							data: { processId: process.id, nodes: flowNodes, alert: alert },
-						});
+					if (rule.id === data.sensor_id) {
+						if (rule.condition === "gt" && parseInt(rule.expectedValue) < parseInt(data.value)) {
+							this.eventBus.emit('alert:alert', {
+								id,
+								agentId,
+								data: { processId: process.id, nodes: flowNodes, alert: alert },
+							});
+						}
+						if (rule.condition === "lt" && parseInt(rule.expectedValue) > parseInt(data.value)) {
+							this.eventBus.emit('alert:alert', {
+								id,
+								agentId,
+								data: { processId: process.id, nodes: flowNodes, alert: alert },
+							});
+						}
+						if (rule.condition === "gtq" && parseInt(rule.expectedValue) <= parseInt(data.value)) {
+							this.eventBus.emit('alert:alert', {
+								id,
+								agentId,
+								data: { processId: process.id, nodes: flowNodes, alert: alert },
+							});
+						}
+						if (rule.condition === "ltq" && parseInt(rule.expectedValue) >= parseInt(data.value)) {
+							this.eventBus.emit('alert:alert', {
+								id,
+								agentId,
+								data: { processId: process.id, nodes: flowNodes, alert: alert },
+							});
+						}
+						if (rule.condition === "neq" && parseInt(rule.expectedValue) !== parseInt(data.value)) {
+							this.eventBus.emit('alert:alert', {
+								id,
+								agentId,
+								data: { processId: process.id, nodes: flowNodes, alert: alert },
+							});
+
+						}
+						if (rule.condition === "eq" && parseInt(rule.expectedValue) === parseInt(data.value)) {
+							this.eventBus.emit('alert:alert', {
+								id,
+								agentId,
+								data: { processId: process.id, nodes: flowNodes, alert: alert },
+							});
+
+						}
 					}
 				}
 

@@ -19,7 +19,7 @@ import { ProcessService } from 'src/process/process.service';
 import { SyncService } from './sync.service';
 import { StreamManager } from 'src/process-engine/stream.service';
 import { LoggerService } from 'src/logger/logger.service';
-import { PredictorService } from 'src/predictor/predictor.service';
+import { ParsersService } from 'src/parsers/parsers.service';
 
 @WebSocketGateway({ cors: true })
 export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -34,6 +34,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		private agentService: AgentService,
 		private syncService: SyncService,
 		private loggerService: LoggerService,
+		private parserService: ParsersService,
 	) { }
 
 	afterInit(server: Server) {
@@ -49,6 +50,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.eventBus.on("alert:alert").subscribe(this.dataAlert.bind(this));
 		this.eventBus.on("alert:ai").subscribe(this.aiAlert.bind(this));
 		this.eventBus.on("agent:updated").subscribe(this.agentUpdate.bind(this));
+		this.eventBus.on("agent:cleanup").subscribe(this.agentCleanUp.bind(this));
 
 	}
 
@@ -68,14 +70,18 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		for (const id of agentsIds) {
 			console.log(id);
 			const agent = await this.connectionStore.get(id);
+			console.log(agent?.metadata, "with", payload);
+			if (!payload.agentFingerprint) {
+				console.error("No fingerprint found");
+			}
 			if (agent?.metadata.userId === payload.agentFingerprint) {
-				console.log("foundnn")
-				agent?.socket.emit(event, payload);
+				console.log("foundnn", agent);
+				agent?.socket.emit("data", { [event]: payload });
 			}
 		}
 	}
 
-	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected" | "alert" | "ai") {
+	async notifyClients<K extends AppEvents>(event: keyof K, payload: any, channel: "data" | "step-data" | "agent-disconnected" | "alert" | "ai" | "start-monitoring") {
 		const agentsIds = this.connectionStore.getAllIds().filter(sock => sock.startsWith("sock-client-"));
 
 		for (const id of agentsIds) {
@@ -86,12 +92,17 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	async agentUpdate(payload: any) {
 		this.logger.log('Agent updated:', payload);
 		if (payload.locked) {
-			console.log("yes daddy")
+			// this.serverEmit("PauseAgent", payload)
 			await this.notifyAgentViaFingerprint("PauseAgent", payload);
 		}
 	}
+	async agentCleanUp(payload: any) {
+		this.logger.log('Sensor updated:', payload);
+		await this.notifyAgentViaFingerprint("CleanUp", payload);
+	}
 	async sensorUpdated(payload: any) {
 		this.logger.log('Sensor updated:', payload);
+		// this.serverEmit("EditSensor", payload)
 		await this.notifyAgentViaFingerprint("EditSensor", payload);
 	}
 	async stepValid(payload: any) {
@@ -116,12 +127,13 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	}
 	async sensorDeleted(payload: any) {
 		this.logger.log('Sensor deleted:', payload);
+		// this.serverEmit("RemoveSensor", payload)
 		await this.notifyAgentViaFingerprint("RemoveSensor", payload);
 	}
 
 	async sensorCreated(payload: any) {
 		this.logger.log('Sensor created:', payload);
-		this.serverEmit("AddSensor", payload)
+		// this.serverEmit("AddSensor", payload)
 		await this.notifyAgentViaFingerprint("AddSensor", payload)
 	}
 
@@ -161,6 +173,48 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		}
 		return;
 	}
+	@SubscribeMessage('order')
+	async handleOrder(
+		@MessageBody() data: any,
+	): Promise<void> {
+		this.logger.log(`Received message: ${JSON.stringify(data)}`);
+		const parsedData = data
+		const process = await this.processService.findOne(parsedData.data.processId, ['steps', 'agent']) as Process
+
+		console.log("i will", parsedData, process)
+		if (parsedData.action === "ON") {
+			for (const d of parsedData.data) {
+				const regOrCoil = this.parserService.logoToModbus(d.address)
+
+				this.notifyAgentViaFingerprint("Write", {
+					agentFingerprint: process.agent.fingerprint,
+					reg: regOrCoil.modbusAddress,
+					val: Number(d.value),
+					r_type: regOrCoil.type?.toUpperCase() as string
+				})
+			}
+			const regOrCoil = this.parserService.logoToModbus(parsedData.triggerAddress)
+
+			this.notifyAgentViaFingerprint("Write", {
+				agentFingerprint: process.agent.fingerprint,
+				reg: regOrCoil.modbusAddress,
+				val: 1,
+				r_type: regOrCoil.type?.toUpperCase() as string
+			})
+			return;
+		}
+		if (parsedData.action === "OFF") {
+			const regOrCoil = this.parserService.logoToModbus(parsedData.triggerAddress)
+
+			this.notifyAgentViaFingerprint("Write", {
+				agentFingerprint: process.agent.fingerprint,
+				reg: regOrCoil.modbusAddress,
+				val: 0,
+				r_type: regOrCoil.type?.toUpperCase() as string
+			})
+			return;
+		}
+	}
 	@SubscribeMessage('command')
 	async handleCommand(
 		@MessageBody() data: string,
@@ -183,9 +237,10 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			return;
 		}
 		if (parsedData.command === "START-PROCESS") {
-			console.log("startrtetewtsatasdtast", process.id);
 			this.eventBus.emit("process:created", { id: process?.id, agentId: process?.agent.id })
 			this.processService.updateState(process?.id, ProcessState.running);
+
+			await this.notifyClients("start:process", process.id, 'start-monitoring');
 			return;
 		}
 	}

@@ -66,10 +66,14 @@ async fn process_single_sensor(
     let agent_guard = agent.lock().await;
     let mut slave_ctx = agent_guard.slave_ctx.lock().await;
 
-    let sensor_value =
-        plc_io::read_from_plc(&mut slave_ctx, sensor.start_register, sensor.end_register)
-            .await
-            .map_err(|e| AppError::PlcError(e.to_string()))?;
+    let sensor_value = plc_io::read_from_plc(
+        &mut slave_ctx,
+        sensor.start_register,
+        sensor.end_register,
+        sensor.r_type.clone(),
+    )
+    .await
+    .map_err(|e| AppError::PlcError(e.to_string()))?;
 
     let timestamp = Local::now().format("%y/%m/%d %H:%M:%S").to_string();
 
@@ -81,19 +85,20 @@ async fn process_single_sensor(
             key: sensor.label.clone(),
             register: sensor.register.clone(),
             s_type: String::from("sensor"),
+            r_type: sensor.r_type,
         };
         agent_guard
             .send_json("monitoring_streamline", &modbus_data)
             .await?;
-    }
-    if sensor.s_type == "general" {
+    } else if sensor.s_type == "general" {
         let modbus_data = plc_io::ModbusData {
             sensor_id: sensor.id,
             time: timestamp,
             value: sensor_value,
             key: sensor.label,
             s_type: String::from("general"),
-            register: sensor.register
+            register: sensor.register,
+            r_type: sensor.r_type,
         };
         agent_guard
             .send_json("monitoring_streamline", &modbus_data)

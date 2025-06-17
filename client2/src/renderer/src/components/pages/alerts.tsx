@@ -167,7 +167,7 @@ export default function Alerts(): ReactElement {
       label: "Alert Triggers",
       placeholder: "512",
       type: "double-input" as const,
-      sensorOptions: defaultValForRule, withVal: true
+      sensorOptions: defaultValForRule, withVal: true, withDoubleVal : true
     },
 
     {

@@ -38,7 +38,8 @@ export class SyncService {
 					end_register: sensor.end_register,
 					register: sensor.register,
 					agentFingerprint: agent.fingerprint,
-					s_type: "sensor"
+					s_type: "sensor",
+					r_type: this.parserService.logoToModbus(sensor.register).type?.toUpperCase() as string 
 				})
 		))
 		agent?.alerts.map(sensor => (
@@ -51,7 +52,8 @@ export class SyncService {
 						register: rule.memoryAddress,
 						end_register: 1,
 						agentFingerprint: agent.fingerprint,
-						s_type: "general"
+						s_type: "general",
+						r_type: this.parserService.logoToModbus(rule.memoryAddress).type as string,
 					})
 			))
 		))

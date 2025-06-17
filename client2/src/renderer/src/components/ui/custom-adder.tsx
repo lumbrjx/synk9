@@ -9,24 +9,29 @@ import {
 } from "@/components/ui/select"
 import { PlusCircle, Trash2 } from "lucide-react"
 import { Input } from "./input"
+import { useState } from "react"
 
 // Define the Rule type
 export type Rule = {
   sensor_id: string
   expectedValue?: string
   register?: string
+  condition?: string
 }
 
+const conditionOptions = ['eq', 'lt', 'gt', 'neq', 'ltq', 'gtq'];
 // Define type for sensor options
 export type SensorOption = {
   value: string
   label: string
   register?: string
+  condition?: string
 }
 
 type RulesInputProps = {
   double?: boolean
   withVal?: boolean
+  withDoubleVal?: boolean
   value: Rule[]
   onChange: (rules: Rule[]) => void
   sensorOptions: SensorOption[]  // Available sensors for selection
@@ -36,6 +41,7 @@ type RulesInputProps = {
 export const RulesInput = ({
   double = false,
   withVal = false,
+  withDoubleVal = false,
   value = [],
   onChange,
   sensorOptions = [],
@@ -53,11 +59,11 @@ export const RulesInput = ({
     newRules.splice(index, 1)
     onChange(newRules)
   }
-
+  const [val, changeValue] = useState("eq")
   // Update a rule's sensorId at specific index
   const updateSensorId = (index: number, newSensorId: string, register?: string) => {
     const newRules = [...value]
-    newRules[index] = { ...newRules[index], sensor_id: newSensorId, register: register}
+    newRules[index] = { ...newRules[index], sensor_id: newSensorId, register: register }
     onChange(newRules)
   }
   const updateRuleValue = (index: number, newRule: string) => {
@@ -65,6 +71,14 @@ export const RulesInput = ({
     const newRules = [...value]
     newRules[index] = { ...newRules[index], expectedValue: newRule }
     onChange(newRules)
+  }
+  const updateEquation = (index: number, condition: string) => {
+
+    const newRules = [...value]
+    newRules[index] = { ...newRules[index], condition: condition};
+    onChange(newRules)
+
+    changeValue(condition)
   }
 
   return (
@@ -89,8 +103,7 @@ export const RulesInput = ({
                       <SelectContent>
                         {sensorOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                            {option.register}
+                            {option.label} - {option.register}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -101,13 +114,35 @@ export const RulesInput = ({
                       placeholder="MemoryAddress"
                       className="text-purple-100"
                     />}
-                    {withVal && <Input
-                      value={rule.expectedValue}
-                      onChange={(e) => updateRuleValue(index, e.target.value)}
-                      placeholder="Final Value"
-                      className="text-purple-100"
-                    />}
                   </div>
+                  {withVal && (
+                    <>
+                      <Input
+                        value={rule.expectedValue}
+                        onChange={(e) => updateRuleValue(index, e.target.value)}
+                        placeholder="Final Value"
+                        className="text-purple-100"
+                      />
+
+                      {withDoubleVal && (
+                        <Select
+                          value={val}
+                          onValueChange={(newValue) => updateEquation(index, newValue)}
+                        >
+                          <SelectTrigger className="text-purple-100 w-full truncate">
+                            <SelectValue placeholder="Select condition" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {conditionOptions.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"

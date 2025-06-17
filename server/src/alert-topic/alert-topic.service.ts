@@ -26,6 +26,7 @@ export class AlertTopicService {
 
 				const rule = new Rule();
 				rule.expectedValue = ruleDto.expectedValue;
+				rule.condition = ruleDto.condition;
 				rule.memoryAddress = ruleDto.sensor_id;
 				return rule;
 			});
@@ -49,7 +50,8 @@ export class AlertTopicService {
 				agentFingerprint: agent?.fingerprint as string,
 				register: sensor.memoryAddress,
 				end_register: 1,
-				s_type: "general"
+				s_type: "general",
+				r_type: this.parserService.logoToModbus(sensor.memoryAddress as string).type?.toUpperCase() as string,
 			});
 		}
 	}
@@ -58,8 +60,8 @@ export class AlertTopicService {
 		return this.alertTopicRepository.find({ relations: ["rules"] });
 	}
 
-	findOne(id: string) {
-		return this.alertTopicRepository.findOne({ where: { id }, relations: ["rules"] });
+	findOne(id: string, relations?: string[]) {
+		return this.alertTopicRepository.findOne({ where: { id }, relations });
 	}
 
 	async update(id: string, updateAlertTopicDto: UpdateAlertTopicDto) {
@@ -86,6 +88,7 @@ export class AlertTopicService {
 			const newRules = updateAlertTopicDto.rules?.map(ruleDto => {
 				const rule = new Rule();
 				rule.expectedValue = ruleDto.expectedValue;
+				rule.condition = ruleDto.condition;
 				rule.memoryAddress = ruleDto.sensor_id;
 				return rule;
 			});
@@ -104,12 +107,21 @@ export class AlertTopicService {
 				agentFingerprint: agent?.fingerprint as string,
 				register: sensor.memoryAddress,
 				end_register: 1,
-				s_type: "general"
+				s_type: "general",
+				r_type: this.parserService.logoToModbus(sensor.memoryAddress as string).type?.toUpperCase() as string,
 			});
 		}
 	}
 
 	async remove(id: string) {
+		const sensor = await this.findOne(id, ["agent"])
+		if (!sensor) {
+			return false;
+		}
+		const deleted = await this.alertTopicRepository.softDelete({ id })
+		if (deleted.affected) {
+			this.eventBus.emit("sensor:deleted", { id, agentFingerprint: sensor?.agent.fingerprint });
+		}
 		await this.alertTopicRepository.softDelete({ id });
 	}
 }

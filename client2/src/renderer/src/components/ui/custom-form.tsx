@@ -34,6 +34,7 @@ type FieldConfig = {
   options?: { value: string; label: string }[] // For select fields
   sensorOptions?: SensorOption[] // For rules input - available sensors
   withVal?: boolean,
+  withDoubleVal?: boolean,
 }
 
 type CustomFormProps = {
@@ -101,6 +102,7 @@ export function CustomForm({ formSchema, defaultValues, fields, onSubmit }: Cust
             <RulesInput
               double={true}
               withVal={field.withVal}
+              withDoubleVal={field.withDoubleVal}
               value={formField.value || []}
               onChange={formField.onChange}
               sensorOptions={field.sensorOptions || []}

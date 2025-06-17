@@ -9,6 +9,7 @@ pub struct SensorConfig {
     pub id: String,
     pub label: String,
     pub s_type: String,
+    pub r_type: String,
     pub start_register: u16,
     pub register: String,
     pub end_register: u16,
@@ -21,6 +22,7 @@ pub enum ChEvent {
     Write {
         reg: u16,
         val: u16,
+        r_type: String,
     },
     AddSensor {
         id: String,
@@ -29,6 +31,7 @@ pub enum ChEvent {
         register: String,
         end_register: u16,
         s_type: String,
+        r_type: String,
     },
     RemoveSensor {
         id: String,
@@ -40,6 +43,7 @@ pub enum ChEvent {
         register: String,
         end_register: u16,
         s_type: String,
+        r_type: String,
     },
     PauseAgent,
     HealthCheck,

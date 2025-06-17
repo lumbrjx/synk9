@@ -1,0 +1,27 @@
+[
+  {
+    "type": "button",
+    "address": "V54.1",
+    "label": "OFF"
+  },
+  {
+    "type": "button",
+    "address": "V54.1",
+    "label": "ON"
+  },
+  {
+    "type": "input",
+    "address": "VW226",
+    "label": "Red"
+  },
+ {
+    "type": "input",
+    "address": "VW228",
+    "label": "Green"
+  },
+  {
+    "type": "input",
+    "address": "VW230",
+    "label": "Cyan"
+  }
+]

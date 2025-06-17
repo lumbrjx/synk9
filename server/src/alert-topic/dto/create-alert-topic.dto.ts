@@ -8,6 +8,9 @@ class RuleDto {
 
 	@IsString()
 	expectedValue: string;
+
+	@IsString()
+	condition: string;
 }
 
 export class CreateAlertTopicDto {

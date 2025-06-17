@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ParsersService {
-	logoToModbus(address: string) {
+	logoToModbus(address) {
 		// Convert address to uppercase and trim whitespace
 		address = address.toString().trim().toUpperCase();
 
@@ -61,7 +61,7 @@ export class ParsersService {
 				if (modbusAddr <= 6808) {
 					return {
 						type: 'Coil',
-						modbusAddress: modbusAddr,
+						modbusAddress: modbusAddr - 1,
 						direction: 'Read/Write',
 						dataType: 'bit'
 					};
@@ -91,8 +91,8 @@ export class ParsersService {
 				const modbusAddr = (num / 2) + 1;
 				if (modbusAddr <= 425) {
 					return {
-						type: 'Holding Register',
-						modbusAddress: modbusAddr,
+						type: 'REG',
+						modbusAddress: modbusAddr - 1,
 						direction: 'Read/Write',
 						dataType: 'word'
 					};
@@ -106,7 +106,7 @@ export class ParsersService {
 			const num = parseInt(match[1]);
 			if (num >= 1 && num <= 8) {
 				return {
-					type: 'Holding Register',
+					type: 'REG',
 					modbusAddress: 512 + num,
 					direction: 'Read/Write',
 					dataType: 'word'
@@ -120,7 +120,7 @@ export class ParsersService {
 			const num = parseInt(match[1]);
 			if (num >= 1 && num <= 64) {
 				return {
-					type: 'Holding Register',
+					type: 'REG',
 					modbusAddress: 528 + num,
 					direction: 'Read/Write',
 					dataType: 'word'

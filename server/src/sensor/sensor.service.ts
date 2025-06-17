@@ -42,7 +42,8 @@ export class SensorService {
 				agentFingerprint: agent?.fingerprint as string,
 				register: saved.register,
 				end_register: saved.end_register,
-				s_type: "sensor"
+				s_type: "sensor",
+				r_type: this.parserService.logoToModbus(createSensorDto.register as string).type?.toUpperCase() as string
 			});
 			return saved;
 		}
@@ -58,8 +59,8 @@ export class SensorService {
 		const process = await this.processReposistory.findOne({ where: { id: id }, relations: ["agent"] })
 		return this.sensorRepository.find({ where: { agentId: process?.agent.id } });
 	}
-	findOne(id: string) {
-		return this.sensorRepository.findOne({ where: { id } });
+	findOne(id: string, relations?: string[]) {
+		return this.sensorRepository.findOne({ where: { id }, relations });
 	}
 
 	async update(id: string, updateSensorDto: UpdateSensorDto) {
@@ -88,15 +89,20 @@ export class SensorService {
 			agentFingerprint: agent?.fingerprint as string,
 			register: updateSensorDto.register as string,
 			end_register: 1,
-			s_type: "sensor"
+			s_type: "sensor",
+			r_type: this.parserService.logoToModbus(updateSensorDto.register as string).type?.toUpperCase() as string
 		});
 		return updatedSensor
 	}
 
 	async remove(id: string) {
+		const sensor = await this.findOne(id, ["agent"])
+		if (!sensor) {
+			return false;
+		}
 		const deleted = await this.sensorRepository.softDelete({ id })
 		if (deleted.affected) {
-			this.eventBus.emit("sensor:deleted", { id });
+			this.eventBus.emit("sensor:deleted", { id, agentFingerprint: sensor?.agent.fingerprint });
 		}
 	}
 }

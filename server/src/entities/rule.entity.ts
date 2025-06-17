@@ -15,6 +15,9 @@ export class Rule {
 	@Column()
 	expectedValue: string;
 
+	@Column()
+	condition: string;
+
 	@ManyToOne(() => AlertTopic, topic => topic.rules, { onDelete: 'CASCADE' })
 	@JoinColumn({ name: 'id' })
 	alertTopic: AlertTopic;

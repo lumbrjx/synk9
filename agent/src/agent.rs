@@ -62,7 +62,7 @@ impl Agent {
                     .await
                     .map_err(|e| AppError::PlcError(e.to_string()))?;
             }
-            ChEvent::Write { reg, val } => {
+            ChEvent::Write { reg, val, r_type } => {
                 println!(
                     "Received WRITE event -> Writing {} to register {}.",
                     val, reg
@@ -73,7 +73,7 @@ impl Agent {
                 }
 
                 let mut slave_ctx = self.slave_ctx.lock().await;
-                plc_io::write_to_plc(&mut slave_ctx, *reg, *val)
+                plc_io::write_to_plc(&mut slave_ctx, *reg, *val, r_type.to_string())
                     .await
                     .map_err(|e| AppError::PlcError(e.to_string()))?;
             }
@@ -84,7 +84,8 @@ impl Agent {
                 end_register,
                 register,
                 start_register,
-                s_type
+                s_type,
+                r_type
             } => {
                 println!("Processing AddSensor: {}", id);
                 let new_sensor = SensorConfig {
@@ -94,6 +95,7 @@ impl Agent {
                     register: register.to_string(),
                     end_register: *end_register,
                     s_type: s_type.to_string(),
+                    r_type: r_type.to_string(),
                 };
 
                 let mut state = self.state.lock().await;
@@ -118,6 +120,7 @@ impl Agent {
                 end_register,
                 register,
                 s_type,
+                r_type
             } => {
                 let mut state = self.state.lock().await;
                 if state.paused_agent {
@@ -131,7 +134,8 @@ impl Agent {
                     start_register: *start_register,
                     end_register: *end_register,
                     register: register.to_string(),
-                    s_type: s_type.to_string()
+                    s_type: s_type.to_string(),
+                    r_type: r_type.to_string()
                 });
             }
             ChEvent::PauseAgent => {

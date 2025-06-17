@@ -19,7 +19,7 @@ export class AlertTopicController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.alertTopicService.findOne(id);
+    return this.alertTopicService.findOne(id, ["rules"]);
   }
 
   @Patch(':id')

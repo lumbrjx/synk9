@@ -12,7 +12,7 @@ import ReactFlow, {
   EdgeProps
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Save, AlertCircle, } from 'lucide-react';
+import { Save, AlertCircle, Monitor } from 'lucide-react';
 import { Button } from './button';
 import { socket } from '@/App';
 import { toast } from 'sonner';
@@ -32,6 +32,8 @@ import {
   SelectValue
 } from "@/components/ui/select"
 import { generateRandomString } from '@/lib/helpers';
+import { HMIBuilder, HMIConfig } from './hmi-builder';
+import { Input } from './input';
 
 // Helper function to adjust handle positions based on node rotation
 const rotationAdjustedPosition = (originalPosition, rotation) => {
@@ -166,7 +168,7 @@ const TankNode = ({ data, isConnectable }) => {
             <circle cx="30" cy="10" r="4" fill="#4B5563" stroke="#9CA3AF" strokeWidth="1.5" />
             <circle cx="50" cy="10" r="4" fill="#4B5563" stroke="#9CA3AF" strokeWidth="1.5" />
             {/* Level percentage with industrial font */}
-            <text x="40" y="50" textAnchor="middle" fill="#E5E7EB" fontSize="12" fontFamily="monospace">
+            <text x="40" y="50" textAnchor="middle" fill="#E5E7EB" fontSize="8" fontFamily="monospace">
               {Math.round((data.level || 0) * 100)}%
             </text>
           </svg>
@@ -629,7 +631,17 @@ interface NodeData {
   value?: number;
   unit?: string;
   sensor?: Rule[];
-  propSensors?: any;
+  propSensors?: {
+    tank_level_sensor?: {
+      sensorValue: number;
+    };
+    counter_sensor?: {
+      sensorValue: number;
+    };
+    temperature_sensor?: {
+      sensorValue: number;
+    };
+  };
   tank_level_sensor?: any;
   counter_sensor?: any;
   tank_max_level?: number;
@@ -681,13 +693,32 @@ const Sidebar = ({ onDragStart }) => {
 
 // Properties panel component
 const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodeProps, setNodeProps, selectedNode, onNodeUpdate, ...props }) => {
+
+  const [hmiDefinitionVal, setHmiDefinitionVal] = useState("");
+  const [hmiConfVal, setHmiConfVal] = useState<HMIConfig[]>([]);
   const [rules, setRules] = useState<Rule[]>([])
   const [_propField, setPropField] = useState([])
 
+  useEffect(() => {
+    const config = localStorage.getItem(`hmiConfig-${props.pageId}`)
+    console.log("Loading HMI config from localStorage:", config);
+    if (!config) {
+      console.log("No HMI config found for pageId:", props.pageId);
+      return;
+    }
+    try {
+      const conf = JSON.parse(config)
+      console.log("Parsed HMI config:", conf);
+      setHmiConfVal(conf)
+    } catch (e) {
+      console.error("Error parsing HMI config:", e);
+    }
+  }, [props.pageId]);
 
   console.log("#######################################################", props.sensorOpt);
   // Update nodeProps when selectedNode changes
   useEffect(() => {
+
     if (selectedNode) {
       console.log("WE NEED THIS", selectedNode.data, selectedNode.data.sensor)
       setNodeProps(selectedNode.data);
@@ -750,6 +781,23 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
   const handleSave = () => {
     onNodeUpdate(selectedNode.id, nodeProps);
   };
+
+  const handleCreateHMI = () => {
+    try {
+      console.log("Creating HMI with definition:", hmiDefinitionVal);
+      const hmiDef = JSON.parse(hmiDefinitionVal)
+      console.log("Parsed HMI definition:", hmiDef);
+      const hmiConfig = hmiDef.map(def => ({ ...def, id: generateRandomString(8) }));
+      console.log("Generated HMI config:", hmiConfig);
+      setHmiConfVal(hmiConfig);
+      localStorage.setItem(`hmiConfig-${props.pageId}`, JSON.stringify(hmiConfig));
+      toast.success(`Creating HMI for ${props.pageId}`);
+    } catch (e) {
+      console.error("Failed to parse json hmi:", e);
+      toast.error("Failed to parse HMI definition");
+    }
+  };
+
   if (!selectedNode) {
     return (
 
@@ -781,11 +829,31 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
             >
               Remove Process
             </Button>
+
+            <Input
+              className="text-purple-100 h-20"
+              placeholder="HMI definition"
+              value={hmiDefinitionVal}
+              onChange={(e) => {
+                setHmiDefinitionVal(e.target.value)
+              }}
+            />
+            <Button
+              onClick={handleCreateHMI}
+              className="flex items-center gap-1 text-white px-3 py-1 rounded-md text-sm bg-blue-600 hover:bg-blue-700"
+            >
+              <Monitor size={14} />
+              Create HMI
+            </Button>
           </div>
         </div>
 
         <h3 className="ps-4 pt-12 font-bold text-gray-200 mb-4">Properties</h3>
         <p className="ps-4 text-gray-400 text-sm">Select a component to edit its properties</p>
+        <HMIBuilder
+          processId={props.pageId}
+          config={hmiConfVal}
+        />
       </div>
     );
   }
@@ -1044,13 +1112,20 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
     <div className="w-88 border-l border-gray-700 p-4 flex flex-col gap-4 overflow-y-auto">
       <div className="flex justify-between items-center">
         <h3 className="font-bold text-gray-200">Properties</h3>
-        {!props.buttonDisabled && <button
-          onClick={handleSave}
-          className="flex items-center gap-1 text-white px-3 py-1 rounded-md text-sm"
-        >
-          <Save size={14} />
-          Apply
-        </button>}
+        <div className="flex gap-2">
+          {!props.buttonDisabled && (
+            <>
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-1 text-white px-3 py-1 rounded-md text-sm"
+              >
+                <Save size={14} />
+                Apply
+              </button>
+
+            </>
+          )}
+        </div>
       </div>
 
       {!Boolean(props.buttonDisabled) && <>
@@ -1096,7 +1171,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
   const [nodeProps, setNodeProps] = useState<NodeData>({});
   const [nodeSensors, setNodeSensors] = useState<Record<string, any>>({});
 
-  const calculateTankLevel = (rawValue: number, minValue = 0, maxValue = 100) => {
+  const calculateTankLevel = (rawValue: number, minValue = 0, maxValue = 300) => {
     // Ensure minValue is less than maxValue
     if (minValue >= maxValue) {
       console.error("Min value must be less than max value");
@@ -1266,49 +1341,6 @@ export const ScadaFlowBuilder = ({ ...props }) => {
     };
   }, [socket, props.setIsRunning]);
 
-  const handleSpecialSensorData = (id: string, sensor: any, data: NodeData) => {
-    console.log("Processing sensor data:", sensor);
-
-    // Create a single updates object to collect all changes
-    let updates: Partial<NodeData> = { ...nodeProps };
-    let updatesApplied = false;
-
-    // Check for specific sensor types directly
-    if (sensor.tank_level_sensor !== undefined) {
-      const rawValue = sensor.tank_level_sensor.sensorValue;
-      const calculatedLevel = calculateTankLevel(rawValue, 0, data.tank_max_level || 100);
-      console.log("Tank level:", rawValue, "→ Calculated:", data.tank_max_level);
-
-      updates.level = calculatedLevel;
-      updatesApplied = true;
-    }
-
-    if (sensor.counter_sensor !== undefined) {
-      const counterValue = sensor.counter_sensor.sensorValue;
-      console.log("Counter value:", counterValue);
-
-      updates.value = counterValue;
-      updatesApplied = true;
-    }
-
-    // Handle temperature sensor
-    if (sensor.temperature_sensor !== undefined) {
-      const tempValue = sensor.temperature_sensor.sensorValue;
-      console.log("Temperature value:", tempValue);
-
-      updates.value = tempValue;
-      updates.unit = '°C';
-      updatesApplied = true;
-    }
-
-    // Apply updates only if changes were made
-    if (updatesApplied) {
-      console.log(`Updating node ${id} with:`, updates);
-      setNodeProps(updates);
-      onNodeUpdate(id, updates);
-    }
-  };
-
   const handleMessage = (message: any) => {
     console.log("Received message:", message);
     try {
@@ -1317,14 +1349,42 @@ export const ScadaFlowBuilder = ({ ...props }) => {
       if (data.id !== props.pageId) return;
 
       if (!data?.data) return;
-      for (const node of data.data.nodes) {
-        if (node.data.propSensors) {
-          handleSpecialSensorData(node.id, node.data.propSensors, node.data);
-        }
-        console.log("Processing node:", node.id, selectedNode?.id, node.data);
-        if (selectedNode && node.id === selectedNode.id) {
-          const nodeSensors = node.data.sensor;
-          setNodeSensors({ [selectedNode.id]: nodeSensors });
+
+      // Update all nodes with their respective sensor data
+      setNodes((nds) =>
+        nds.map((n) => {
+          const nodeData = data.data.nodes.find((node: any) => node.id === n.id);
+          if (nodeData?.data?.propSensors) {
+            const updates = { ...n.data };
+
+            // Handle tank level updates
+            if (nodeData.data.propSensors.tank_level_sensor) {
+              const rawValue = nodeData.data.propSensors.tank_level_sensor.sensorValue;
+              updates.level = calculateTankLevel(rawValue, 0, updates.tank_max_level || 300);
+            }
+
+            // Handle counter updates
+            if (nodeData.data.propSensors.counter_sensor) {
+              updates.value = nodeData.data.propSensors.counter_sensor.sensorValue;
+            }
+
+            // Handle temperature updates
+            if (nodeData.data.propSensors.temperature_sensor) {
+              updates.value = nodeData.data.propSensors.temperature_sensor.sensorValue;
+              updates.unit = '°C';
+            }
+
+            return { ...n, data: updates };
+          }
+          return n;
+        })
+      );
+
+      // Update selected node's sensors if it exists
+      if (selectedNode) {
+        const selectedNodeData = data.data.nodes.find((node: any) => node.id === selectedNode.id);
+        if (selectedNodeData?.data?.sensor) {
+          setNodeSensors({ [selectedNode.id]: selectedNodeData.data.sensor });
         }
       }
     } catch (err) {
@@ -1369,8 +1429,8 @@ export const ScadaFlowBuilder = ({ ...props }) => {
                   sensorId: sensor.sensor_id,
                   ruleMemoryAddress: rule.memoryAddress,
                   ruleAgentId: rule.agentId,
-                  sensor:sensor,
-                  rule:rule,
+                  sensor: sensor,
+                  rule: rule,
                   sensorAgentId: sensor.agentId,
                   sensorMemoryAddress: sensor.register,
                   ruleId: rule.id,
@@ -1381,51 +1441,23 @@ export const ScadaFlowBuilder = ({ ...props }) => {
               return matches;
             });
 
-
-            if (!hasMatchingSensor) {
-              // Update node status based on alert type
-              let newStatus = 'normal';
-              switch (alert.alertType) {
-                case 'incident':
-                case 'breakdown':
-                  newStatus = 'error';
-                  break;
-                case 'offline':
-                  newStatus = 'warning';
-                  break;
-                case 'normal':
-                  newStatus = 'normal';
-                  break;
-              }
-
-              console.log("Updating node status:", {
-                nodeId: node.id,
-                oldStatus: node.data.status,
-                newStatus: newStatus,
-                alertType: alert.alertType
-              });
-
-              // Update the node's data
-              return {
-                ...node,
-                data: {
-                  ...node.data,
-                  status: newStatus
-                }
-              };
+            if (hasMatchingSensor) {
+              const updates = { ...node.data };
+              updates.status = alert.alertType === 'warning' ? 'warning' : 'error';
+              return { ...node, data: updates };
             }
             return node;
           })
         );
       } catch (err) {
-        console.error('Failed to process alert:', err);
+        console.error('Failed to parse alert message:', err);
       }
     };
 
-    socket.on('alert', handleAlert);
+    socket.on('alert:alert', handleAlert);
 
     return () => {
-      socket.off('alert', handleAlert);
+      socket.off('alert:alert', handleAlert);
     };
   }, [socket]);
 

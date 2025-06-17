@@ -16,6 +16,7 @@ export interface AppEvents {
 		register: string,
 		agentFingerprint: string,
 		s_type: "general" | "sensor"
+		r_type: string 
 	};
 
 	'sensor:updated': {
@@ -26,10 +27,15 @@ export interface AppEvents {
 		end_register: number,
 		agentFingerprint: string,
 		s_type: "general" | "sensor"
+		r_type: string 
 	};
-	'sensor:deleted': { id: string }
+	'sensor:deleted': {
+		id: string
+		agentFingerprint: string,
+	}
 
 	'process:created': { id: string, agentId: string };
+	'start:process': string;
 	'process:cycle-done': { id: string, agentId: string };
 	'process:updated': { id: string, agentId: string };
 	'process:deleted': { id: string };
