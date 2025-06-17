@@ -26,3 +26,4 @@ url = "2.5.4"
 rust_socketio = { version = "0.6.0", features = ["async"] }
 validator = { version = "0.19", features = ["derive"] }
 thiserror = "1.0"
+openssl = { version = "0.10", features = ["vendored"] }

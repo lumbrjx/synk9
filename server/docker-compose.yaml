@@ -1,4 +1,16 @@
 services:
+  app:
+    image: synk-9:prod
+    ports:
+      - "8000:8000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env.docker
+    depends_on:
+      - auto-database
+      - auto-redis
+
   auto-database:
     image: postgres
     volumes:
@@ -48,26 +60,7 @@ services:
       - influxdb_data:/var/lib/influxdb
     restart: unless-stopped
 
-  auto_grafana:
-    image: grafana/grafana:9.5.2
-    container_name: grafana
-    depends_on:
-      - auto-influxdb
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_SECURITY_ALLOW_EMBEDDING=true          # allow embedding in iframes
-      - GF_AUTH_ANONYMOUS_ENABLED=true             # enable anonymous access (optional)
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer          # anonymous role
-      # You can add more Grafana environment variables here if needed
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
-      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-      - ./grafana/dashboards:/etc/grafana/dashboards
-
 volumes:
   redis_data:
   pg_data:
   influxdb_data:
-  grafana_data:
