@@ -25,8 +25,9 @@ function createWindow(): void {
     })
   })
 
-  mainWindow.loadURL('http://localhost:8000')
+  mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
 
+  mainWindow.webContents.openDevTools();
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
   })
