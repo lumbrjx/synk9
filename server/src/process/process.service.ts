@@ -42,7 +42,6 @@ export class ProcessService {
 		return updatedProcess;
 	}
 	async updateFlow(id: string, updateProcessDto: UpdateProcessDto) {
-		console.log("im process data:", updateProcessDto)
 
 		const process = await this.processRepository.findOne({ where: { id } })
 		if (!process) {

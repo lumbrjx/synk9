@@ -175,6 +175,20 @@ export class StreamManager {
 							name: data.label,
 						};
 					}
+					if (specialSensor.valve_sensor !== undefined) {
+						specialSensor.valve_sensor = {
+							sensor_id: sensor.sensor_id,
+							sensorValue: data.value,
+							name: data.label,
+						};
+					};
+					if (specialSensor.conveyor_sensor !== undefined) {
+						specialSensor.conveyor_sensor = {
+							sensor_id: sensor.sensor_id,
+							sensorValue: data.value,
+							name: data.label,
+						};
+					};
 					if (specialSensor.tank_level_sensor !== undefined) {
 						specialSensor.tank_level_sensor = {
 							sensor_id: sensor.sensor_id,

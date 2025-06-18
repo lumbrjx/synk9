@@ -641,9 +641,13 @@ interface NodeData {
     temperature_sensor?: {
       sensorValue: number;
     };
+    valve_sensor?: {
+      sensorValue: number;
+    };
+    conveyor_sensor?: {
+      sensorValue: number;
+    };
   };
-  tank_level_sensor?: any;
-  counter_sensor?: any;
   tank_max_level?: number;
   note?: string;
   tankColor?: string;
@@ -990,6 +994,24 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
       case 'valve':
         return (
           <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Valve sensor</label>
+            <Select
+              name='valve_sensor'
+              onValueChange={(d) => handlePropFieldChange({ valve_sensor: d })}
+              defaultValue={''}
+            >
+              <SelectTrigger className="text-purple-100 w-full">
+                <SelectValue placeholder={"valve sensor"} />
+              </SelectTrigger>
+              <SelectContent>
+                {sensors?.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <label className="text-sm text-gray-300">Status</label>
             <div className="grid grid-cols-2 gap-2">
               {['open', 'closed'].map((status) => (
@@ -1010,6 +1032,25 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
       case 'conveyor':
         return (
           <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Conveyor sensor</label>
+            <Select
+              name='valve_sensor'
+              onValueChange={(d) => handlePropFieldChange({ conveyor_sensor: d })}
+              defaultValue={''}
+            >
+              <SelectTrigger className="text-purple-100 w-full">
+                <SelectValue placeholder={"conveyor sensor"} />
+              </SelectTrigger>
+              <SelectContent>
+                {sensors?.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+
             <label className="text-sm text-gray-300">Status</label>
             <div className="grid grid-cols-2 gap-2">
               {['running', 'stopped'].map((status) => (
@@ -1098,6 +1139,88 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
                 onChange={handleChange}
                 className="border border-gray-700 rounded-md p-2 text-gray-200"
               />
+            </div>
+          </>
+        );
+      case 'valve_sensor':
+        return (
+          <>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-gray-300">Valve Sensor</label>
+              <Select
+                name='valve_sensor'
+                onValueChange={(d) => handlePropFieldChange({ valve_sensor: d })}
+                defaultValue={''}
+              >
+                <SelectTrigger className="text-purple-100 w-full">
+                  <SelectValue placeholder={"valve sensor"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sensors?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-gray-300">Status</label>
+              <div className="grid grid-cols-2 gap-2">
+                {['open', 'closed'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    className={`p-2 rounded-md text-sm capitalize ${nodeProps.status === status
+                      ? 'text-white'
+                      : 'text-gray-300 '
+                      }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+      case 'conveyor_sensor':
+        return (
+          <>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-gray-300">Conveyor Sensor</label>
+              <Select
+                name='conveyor_sensor'
+                onValueChange={(d) => handlePropFieldChange({ conveyor_sensor: d })}
+                defaultValue={''}
+              >
+                <SelectTrigger className="text-purple-100 w-full">
+                  <SelectValue placeholder={"conveyor sensor"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sensors?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-gray-300">Status</label>
+              <div className="grid grid-cols-2 gap-2">
+                {['running', 'stopped'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusChange(status)}
+                    className={`p-2 rounded-md text-sm capitalize ${nodeProps.status === status
+                      ? 'text-white'
+                      : 'text-gray-300 hover:bg-gray-700'
+                      }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         );
@@ -1367,7 +1490,14 @@ export const ScadaFlowBuilder = ({ ...props }) => {
             if (nodeData.data.propSensors.counter_sensor) {
               updates.value = nodeData.data.propSensors.counter_sensor.sensorValue;
             }
-
+            if (nodeData.data.propSensors.valve_sensor) {
+              updates.value = nodeData.data.propSensors.valve_sensor.sensorValue;
+              updates.status = nodeData.data.propSensors.valve_sensor.sensorValue === 1 ? 'open' : 'closed';
+            }
+            if (nodeData.data.propSensors.conveyor_sensor) {
+              updates.value = nodeData.data.propSensors.conveyor_sensor.sensorValue;
+              updates.status = nodeData.data.propSensors.conveyor_sensor.sensorValue === 1 ? 'running' : 'stopped';
+            }
             // Handle temperature updates
             if (nodeData.data.propSensors.temperature_sensor) {
               updates.value = nodeData.data.propSensors.temperature_sensor.sensorValue;

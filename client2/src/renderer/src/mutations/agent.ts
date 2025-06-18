@@ -13,23 +13,34 @@ export async function create<T>(route: string, data: T) {
 
   } catch (e) {
     console.log('e', e)
+    throw e;
   }
 }
 export async function remove(route: string) {
-  const response = await axios.delete(baseUrl + route, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  return response.data
+  try {
+    const response = await axios.delete(baseUrl + route, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    return response.data
+
+  } catch (e) {
+    throw e;
+  }
 }
 export async function update<T>(route: string, data: T) {
-  const response = await axios.patch(baseUrl + route, data, {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  return response.data
+  try {
+    const response = await axios.patch(baseUrl + route, data, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    return response.data
+
+  } catch (e) {
+    throw e;
+  }
 }
 
 
