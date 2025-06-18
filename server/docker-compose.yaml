@@ -1,15 +1,15 @@
 services:
-  app:
-    image: synk-9:prod
-    ports:
-      - "8000:8000"
-    environment:
-      - NODE_ENV=production
-    env_file:
-      - .env.docker
-    depends_on:
-      - auto-database
-      - auto-redis
+  # app:
+  #   image: synk-9:prod
+  #   ports:
+  #     - "8000:8000"
+  #   environment:
+  #     - NODE_ENV=production
+  #   env_file:
+  #     - .env.docker
+  #   depends_on:
+  #     - auto-database
+  #     - auto-redis
 
   auto-database:
     image: postgres

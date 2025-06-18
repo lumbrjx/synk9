@@ -6,7 +6,7 @@ import { SensorService } from 'src/sensor/sensor.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Process, Sensor } from 'src/entities';
 import { AgentModule } from 'src/agent/agent.module';
-import { ParsersService } from 'src/parsers/parsers.service';
+import { ParsersService } from 'src/parsers/parser-builder.service';
 
 @Module({
 	imports: [ConnectionModule, TypeOrmModule.forFeature([Sensor, Process]), AgentModule],

@@ -6,7 +6,7 @@ import { AlertTopic, AlertType, Rule } from 'src/entities';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { AgentService } from 'src/agent/agent.service';
-import { ParsersService } from 'src/parsers/parsers.service';
+import { ParsersService } from 'src/parsers/parser-builder.service';
 
 @Injectable()
 export class AlertTopicService {
@@ -41,17 +41,18 @@ export class AlertTopicService {
 			return await manager.save(AlertTopic, alertTopic);
 		});
 		const agent = await this.agentService.findOne(createAlertTopicDto.agentId);
+		const parser = this.parserService.getParser(agent?.plcId as string);
 
 		for (const sensor of d.rules) {
 			this.eventBus.emit("sensor:created", {
 				label: d.name,
 				id: d.id,
-				start_register: this.parserService.logoToModbus(sensor.memoryAddress as string).modbusAddress as number,
+				start_register: parser?.addressToModbus(sensor.memoryAddress as string).modbusAddress as number,
 				agentFingerprint: agent?.fingerprint as string,
 				register: sensor.memoryAddress,
 				end_register: 1,
 				s_type: "general",
-				r_type: this.parserService.logoToModbus(sensor.memoryAddress as string).type?.toUpperCase() as string,
+				r_type: parser?.addressToModbus(sensor.memoryAddress as string).type?.toUpperCase() as string,
 			});
 		}
 	}
@@ -98,17 +99,18 @@ export class AlertTopicService {
 			return s;
 		});
 		const agent = await this.agentService.findOne(updateAlertTopicDto.agentId);
+		const parser = this.parserService.getParser(agent?.plcId as string);
 
 		for (const sensor of d.rules) {
 			this.eventBus.emit("sensor:updated", {
 				label: d.name,
 				id: d.id,
-				start_register: this.parserService.logoToModbus(sensor.memoryAddress as string).modbusAddress as number,
+				start_register: parser?.addressToModbus(sensor.memoryAddress as string).modbusAddress as number,
 				agentFingerprint: agent?.fingerprint as string,
 				register: sensor.memoryAddress,
 				end_register: 1,
 				s_type: "general",
-				r_type: this.parserService.logoToModbus(sensor.memoryAddress as string).type?.toUpperCase() as string,
+				r_type: parser?.addressToModbus(sensor.memoryAddress as string).type?.toUpperCase() as string,
 			});
 		}
 	}

@@ -43,8 +43,7 @@ run:
 
 # Clean up
 clean:
-	cd server && docker compose --env-file=.env.docker down --remove-orphans
-  kill -9 $(lsof -ti :8022)
+	cd server && docker compose --env-file=.env.docker down --remove-orphans && 
 	rm -f ai-server.log
 
 # Development helpers

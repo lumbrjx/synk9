@@ -6,12 +6,14 @@ import { ProcessStep } from 'src/entities/process-steps.entity';
 import { Process } from 'src/entities/process.entity';
 import { ProcessStepController } from './process-step.controller';
 import { ProcessStepService } from './process-step.service';
-import { Rule, Sensor } from 'src/entities';
+import { Agent, Rule, Sensor } from 'src/entities';
+import { AgentService } from 'src/agent/agent.service';
+import { AgentModule } from 'src/agent/agent.module';
 
 @Module({
-	imports: [TypeOrmModule.forFeature([ProcessStep, Process, Sensor, Rule])],
+	imports: [TypeOrmModule.forFeature([ProcessStep, Process, Sensor, Rule, Agent]), AgentModule],
 	controllers: [ProcessController, ProcessStepController],
-	providers: [ProcessService, ProcessStepService],
-	exports: [ProcessService],
+	providers: [ProcessService, ProcessStepService, AgentService],
+	exports: [ProcessService, AgentService],
 })
 export class ProcessModule { }

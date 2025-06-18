@@ -9,11 +9,11 @@ import { SensorModule } from './sensor/sensor.module';
 import { ConnectionStoreModule } from './connection-store/connection-store.module';
 import { ProcessEngineModule } from './process-engine/engine.module';
 import { AlertTopicModule } from './alert-topic/alert-topic.module';
-import { ParsersService } from './parsers/parsers.service';
 import { LoggerService } from './logger/logger.service';
 import { LoggerModule } from './logger/logger.module';
 import { PredictorService } from './predictor/predictor.service';
 import { AccountModule } from './account/account.module';
+import { ParsersService } from './parsers/parser-builder.service';
 
 @Module({
 	imports: [

@@ -4,7 +4,7 @@ import { ConnectionStore } from 'src/connection-store/connection-store.service';
 import { ConnectionModule } from 'src/connection/connection.module';
 import { ProcessModule } from 'src/process/process.module';
 import { SyncService } from './sync.service';
-import { ParsersService } from 'src/parsers/parsers.service';
+import { ParsersService } from 'src/parsers/parser-builder.service';
 
 @Global()
 @Module({

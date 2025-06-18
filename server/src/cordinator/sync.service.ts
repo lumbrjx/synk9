@@ -2,8 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { AgentService } from 'src/agent/agent.service';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { isEqual } from "lodash"
-import { Agent, AlertTopic, Sensor } from 'src/entities';
-import { ParsersService } from 'src/parsers/parsers.service';
+import { ParsersService } from 'src/parsers/parser-builder.service';
 
 @Injectable()
 export class SyncService {
@@ -15,6 +14,7 @@ export class SyncService {
 
 	async syncAgentWithServerData(data: any, fingerprint: string) {
 		const agent = await this.agentService.findByFingerprint(fingerprint, ["sensors", "alerts", "alerts.rules"]);
+		const parser = this.parserService.getParser(agent?.plcId as string);
 		const sensors = agent?.sensors.map(sensor => (
 			{
 				id: sensor.id,
@@ -39,7 +39,7 @@ export class SyncService {
 					register: sensor.register,
 					agentFingerprint: agent.fingerprint,
 					s_type: "sensor",
-					r_type: this.parserService.logoToModbus(sensor.register).type?.toUpperCase() as string 
+					r_type: parser?.addressToModbus(sensor.register).type?.toUpperCase() as string 
 				})
 		))
 		agent?.alerts.map(sensor => (
@@ -48,12 +48,12 @@ export class SyncService {
 					{
 						id: sensor.id,
 						label: sensor.name,
-						start_register: this.parserService.logoToModbus(rule.memoryAddress).modbusAddress as number,
+						start_register: parser?.addressToModbus(rule.memoryAddress).modbusAddress as number,
 						register: rule.memoryAddress,
 						end_register: 1,
 						agentFingerprint: agent.fingerprint,
 						s_type: "general",
-						r_type: this.parserService.logoToModbus(rule.memoryAddress).type as string,
+						r_type: parser?.addressToModbus(rule.memoryAddress).type as string,
 					})
 			))
 		))

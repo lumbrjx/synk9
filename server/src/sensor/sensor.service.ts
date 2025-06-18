@@ -6,7 +6,7 @@ import { Process, Sensor } from 'src/entities';
 import { In, Repository } from 'typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { AgentService } from 'src/agent/agent.service';
-import { ParsersService } from 'src/parsers/parsers.service';
+import { ParsersService } from 'src/parsers/parser-builder.service';
 
 @Injectable()
 export class SensorService {
@@ -22,9 +22,12 @@ export class SensorService {
 	) { }
 
 	async create(createSensorDto: CreateSensorDto) {
+
+		const agent = await this.agentService.findOne(createSensorDto.agentId);
+		const parser = this.parserService.getParser(agent?.plcId as string);
 		const data = {
 			...createSensorDto,
-			start_register: this.parserService.logoToModbus(createSensorDto.register).modbusAddress,
+			start_register: parser?.addressToModbus(createSensorDto.register).modbusAddress,
 			end_register: 1
 		}
 		const sensor = this.sensorRepository.create(data);
@@ -33,7 +36,6 @@ export class SensorService {
 		}
 		const saved = await this.sensorRepository.save(sensor);
 		if (saved) {
-			const agent = await this.agentService.findOne(saved.agentId);
 
 			this.eventBus.emit("sensor:created", {
 				label: saved.name,
@@ -43,7 +45,7 @@ export class SensorService {
 				register: saved.register,
 				end_register: saved.end_register,
 				s_type: "sensor",
-				r_type: this.parserService.logoToModbus(createSensorDto.register as string).type?.toUpperCase() as string
+				r_type: parser?.addressToModbus(createSensorDto.register as string).type?.toUpperCase() as string
 			});
 			return saved;
 		}
@@ -64,11 +66,17 @@ export class SensorService {
 	}
 
 	async update(id: string, updateSensorDto: UpdateSensorDto) {
+
+		const agent = await this.agentService.findOne(updateSensorDto.agentId as string);
+		if (!agent) {
+			throw new Error(`Failed to find the agent with ID: ${id}`);
+		}
+		const parser = this.parserService.getParser(agent?.plcId as string);
 		const updatedSensor = await this.sensorRepository.update({ id }, {
 			name: updateSensorDto.name,
 			description: updateSensorDto.description,
 			register: updateSensorDto.register,
-			start_register: this.parserService.logoToModbus(updateSensorDto.register as string).modbusAddress as number,
+			start_register: parser?.addressToModbus(updateSensorDto.register as string).modbusAddress as number,
 			end_register: 1
 		})
 		if (!updatedSensor.affected) {
@@ -78,19 +86,16 @@ export class SensorService {
 		if (!updateSensorDto.agentId) {
 			throw new Error(`agent ID required: ${id}`);
 		}
-		const agent = await this.agentService.findOne(updateSensorDto.agentId as string);
-		if (!agent) {
-			throw new Error(`Failed to find the agent with ID: ${id}`);
-		}
+
 		this.eventBus.emit("sensor:updated", {
 			id,
 			label: updateSensorDto.name as string,
-			start_register: this.parserService.logoToModbus(updateSensorDto.register as string).modbusAddress as number,
+			start_register: parser?.addressToModbus(updateSensorDto.register as string).modbusAddress as number,
 			agentFingerprint: agent?.fingerprint as string,
 			register: updateSensorDto.register as string,
 			end_register: 1,
 			s_type: "sensor",
-			r_type: this.parserService.logoToModbus(updateSensorDto.register as string).type?.toUpperCase() as string
+			r_type: parser?.addressToModbus(updateSensorDto.register as string).type?.toUpperCase() as string
 		});
 		return updatedSensor
 	}

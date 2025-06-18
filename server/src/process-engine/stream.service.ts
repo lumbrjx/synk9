@@ -3,10 +3,11 @@ import { Subject, interval, fromEvent, merge } from 'rxjs';
 import { map, takeUntil, tap } from 'rxjs';
 import { GlobalProcessService } from './processor.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Process } from 'src/entities';
+import { AgentState, Process } from 'src/entities';
 import { Repository } from 'typeorm';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 import { PredictorService } from 'src/predictor/predictor.service';
+import { AgentService } from 'src/agent/agent.service';
 
 @Global()
 @Injectable()
@@ -14,12 +15,13 @@ export class StreamManager {
 	private streams: Map<any, any>;
 	private streamCounter: number;
 	private readonly logger = new Logger(GlobalProcessService.name);
+	private agentId: string;
 	constructor(
 		@InjectRepository(Process)
 		private readonly processRepository: Repository<Process>,
 		private readonly eventBus: EventBusService,
 		private readonly predictorService: PredictorService,
-
+		private readonly agentService: AgentService,
 
 	) {
 		this.streams = new Map();
@@ -43,7 +45,8 @@ export class StreamManager {
 			where: { id },
 			relations: ['agent', 'agent.processes', "agent.alerts", "agent.alerts.rules"],
 		});
-
+		this.agentService.changeAgentState(process?.agent.id as string, AgentState.busy);
+		this.agentId = process?.agent.id as string;
 		if (!process || !process.flow) {
 			this.logger.error(`❌ Invalid or empty process for id: ${id}`);
 			return;
@@ -98,6 +101,7 @@ export class StreamManager {
 			stream.subscription.unsubscribe();
 			this.streams.delete(streamId);
 			console.log(`Deleted stream ${streamId}: ${stream.name}`);
+			this.agentService.changeAgentState(this.agentId as string, AgentState.ready);
 			return true;
 		}
 		return false;

@@ -9,13 +9,15 @@ import { GlobalProcessService } from './processor.service';
 import { GlobalProcessWorker } from './processor.worker';
 import { StreamManager } from './stream.service';
 import { PredictorService } from 'src/predictor/predictor.service';
+import { AgentModule } from 'src/agent/agent.module';
 
 @Global()
 @Module({
-	imports: [TypeOrmModule.forFeature([ProcessStep, Process, Sensor, Rule]),
+	imports: [TypeOrmModule.forFeature([ProcessStep, Process, Sensor, Rule],),
 	BullModule.registerQueue({
 		name: 'global-process',
 	}),
+		AgentModule
 	],
 	providers: [ProcessEngineService, GlobalProcessService, GlobalProcessWorker, StreamManager, PredictorService],
 	exports: [ProcessEngineService, GlobalProcessService, GlobalProcessWorker, StreamManager],

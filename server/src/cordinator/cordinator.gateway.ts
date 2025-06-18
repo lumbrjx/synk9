@@ -11,7 +11,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { AgentService } from 'src/agent/agent.service';
 import { ConnectionStore } from 'src/connection-store/connection-store.service';
-import { Process, ProcessState } from 'src/entities';
+import { AgentState, Process, ProcessState } from 'src/entities';
 import { AgentEventType } from 'src/event-bus/agent-events';
 import { AppEvents } from 'src/event-bus/event-bus.interface';
 import { EventBusService } from 'src/event-bus/event-bus.service';
@@ -19,7 +19,7 @@ import { ProcessService } from 'src/process/process.service';
 import { SyncService } from './sync.service';
 import { StreamManager } from 'src/process-engine/stream.service';
 import { LoggerService } from 'src/logger/logger.service';
-import { ParsersService } from 'src/parsers/parsers.service';
+import { ParsersService } from 'src/parsers/parser-builder.service';
 
 @WebSocketGateway({ cors: true })
 export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -150,11 +150,14 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			console.log("otk", client.handshake.auth.token)
 			const id = `sock-agent-${client.id}`
 			await this.connectionStore.set(id, client, { userId: client.handshake.auth.token })
+			const d = await this.agentService.changeAgentState(client.handshake.auth.token, AgentState.ready);
+			console.log(d);
 			client.emit("data", "HealthCheck");
 			return;
 		} else {
 			console.log("auths", client.handshake.auth.token)
 			console.log("discon from", client.id)
+			this.connectionStore.delete("sock-client-" + client.id)
 			client.disconnect(true)
 			return;
 		}
@@ -164,7 +167,10 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.logger.log(`Client disconnected: ${client.id}`);
 		const agentSocketId = await this.connectionStore.get("sock-agent-" + client.id)
 		if (!agentSocketId) return;
+
 		const agentId = await this.agentService.findByFingerprint(agentSocketId.metadata.userId, ["processes"]);
+		await this.agentService.changeAgentState(agentId?.id as string, AgentState.offline);
+		this.connectionStore.delete("sock-agent-" + client.id)
 		if (!agentId?.processes || !agentId.processes.length) return;
 		for (const process of agentId?.processes) {
 			this.eventBus.emit("process:kill", { id: process.id })
@@ -180,37 +186,38 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
 		const parsedData = data
 		const process = await this.processService.findOne(parsedData.data.processId, ['steps', 'agent']) as Process
+		const parser = this.parserService.getParser(process.agent.plcId);
 
 		console.log("i will", parsedData, process)
 		if (parsedData.action === "ON") {
 			for (const d of parsedData.data) {
-				const regOrCoil = this.parserService.logoToModbus(d.address)
+				const regOrCoil = parser?.addressToModbus(d.address)
 
 				this.notifyAgentViaFingerprint("Write", {
 					agentFingerprint: process.agent.fingerprint,
-					reg: regOrCoil.modbusAddress,
+					reg: regOrCoil?.modbusAddress,
 					val: Number(d.value),
-					r_type: regOrCoil.type?.toUpperCase() as string
+					r_type: regOrCoil?.type?.toUpperCase() as string
 				})
 			}
-			const regOrCoil = this.parserService.logoToModbus(parsedData.triggerAddress)
+			const regOrCoil = parser?.addressToModbus(parsedData.triggerAddress)
 
 			this.notifyAgentViaFingerprint("Write", {
 				agentFingerprint: process.agent.fingerprint,
-				reg: regOrCoil.modbusAddress,
+				reg: regOrCoil?.modbusAddress,
 				val: 1,
-				r_type: regOrCoil.type?.toUpperCase() as string
+				r_type: regOrCoil?.type?.toUpperCase() as string
 			})
 			return;
 		}
 		if (parsedData.action === "OFF") {
-			const regOrCoil = this.parserService.logoToModbus(parsedData.triggerAddress)
+			const regOrCoil = parser?.addressToModbus(parsedData.triggerAddress)
 
 			this.notifyAgentViaFingerprint("Write", {
 				agentFingerprint: process.agent.fingerprint,
-				reg: regOrCoil.modbusAddress,
+				reg: regOrCoil?.modbusAddress,
 				val: 0,
-				r_type: regOrCoil.type?.toUpperCase() as string
+				r_type: regOrCoil?.type?.toUpperCase() as string
 			})
 			return;
 		}

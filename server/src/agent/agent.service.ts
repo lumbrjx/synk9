@@ -1,19 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateAgentDto } from './dto/create-agent.dto';
 import { UpdateAgentDto } from './dto/update-agent.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Agent } from 'src/entities';
+import { Agent, AgentState } from 'src/entities';
 import { EventBusService } from 'src/event-bus/event-bus.service';
 
 @Injectable()
 export class AgentService {
+	private PLC_MODELS = ["LOGO!"];
 	constructor(
 		@InjectRepository(Agent)
 		private agentRepository: Repository<Agent>,
 		private eventBus: EventBusService,
 	) { }
 	async create(createAgentDto: CreateAgentDto) {
+		if (!this.PLC_MODELS.includes(createAgentDto.plcId)) {
+			throw new BadRequestException("The provided PLC is not supported")
+		}
 		const createdAgent = this.agentRepository.create(createAgentDto);
 		if (!createdAgent) {
 			throw new Error("Failed to create a new agent");
@@ -22,6 +26,13 @@ export class AgentService {
 		if (saved) {
 			this.eventBus.emit("agent:created", { id: saved.id });
 			return saved
+		}
+	}
+	async changeAgentState(id: string, status: AgentState) {
+		try {
+			await this.agentRepository.update({ id }, { status });
+		} catch {
+			await this.agentRepository.update({ fingerprint: id }, { status });
 		}
 	}
 

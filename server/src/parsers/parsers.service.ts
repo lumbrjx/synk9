@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { ParserSignature } from './parser-builder.service';
+
+
 
 @Injectable()
-export class ParsersService {
-	logoToModbus(address) {
+export class LogoParsersService implements ParserSignature {
+	addressToModbus(address: string) {
 		// Convert address to uppercase and trim whitespace
 		address = address.toString().trim().toUpperCase();
 
@@ -138,7 +141,7 @@ export class ParsersService {
 	convertMultipleAddresses(addresses) {
 		return addresses.map(addr => ({
 			logoAddress: addr,
-			...this.logoToModbus(addr)
+			...this.addressToModbus(addr)
 		}));
 	}
 
