@@ -612,6 +612,59 @@ const CounterNode = ({ data, isConnectable }) => (
   </div>
 );
 
+// Add RackNode component
+const RackNode = ({ data, isConnectable }) => {
+  const totalSlots = 54;
+  const slotsPerRow = 9; // 6 rows of 9 slots each
+  const rows = 6;
+  const cols = 9;
+  const filled = Math.max(0, Math.min(totalSlots, data.value || 0));
+
+  // Generate slot positions (bottom right to bottom left)
+  const slots: { row: number; col: number; slotIndex: number }[] = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      // Calculate slot index for bottom right to bottom left
+      const slotIndex = (rows - 1 - row) * cols + (cols - 1 - col);
+      slots.push({ row, col, slotIndex });
+    }
+  }
+
+  return (
+    <div className="relative">
+      <Handle
+        type="target"
+        position={rotationAdjustedPosition(Position.Left, data.rotation || 0)}
+        isConnectable={isConnectable}
+      />
+      <div className="flex flex-col items-center">
+        <div className="text-xs text-gray-300 mb-1">{data.label || 'Rack'}</div>
+        <svg width={cols * 18} height={rows * 18} viewBox={`0 0 ${cols * 18} ${rows * 18}`}>
+          {slots.map(({ row, col, slotIndex }, i) => (
+            <rect
+              key={i}
+              x={col * 18 + 2}
+              y={row * 18 + 2}
+              width={14}
+              height={14}
+              rx={3}
+              fill={slotIndex < filled ? '#22c55e' : '#374151'}
+              stroke="#9CA3AF"
+              strokeWidth={1}
+            />
+          ))}
+        </svg>
+        <div className="text-xs text-gray-300 mt-2">{filled} / {totalSlots} filled</div>
+      </div>
+      <Handle
+        type="source"
+        position={rotationAdjustedPosition(Position.Right, data.rotation || 0)}
+        isConnectable={isConnectable}
+      />
+    </div>
+  );
+};
+
 // Define custom node types
 const nodeTypes = {
   tank: TankNode,
@@ -620,7 +673,8 @@ const nodeTypes = {
   motor: MotorNode,
   conveyor: ConveyorNode,
   counter: CounterNode,
-  sensor: SensorNode
+  sensor: SensorNode,
+  rack: RackNode,
 };
 
 // Add type definitions
@@ -642,6 +696,9 @@ interface NodeData {
       sensorValue: number;
     };
     valve_sensor?: {
+      sensorValue: number;
+    };
+    rack_sensor?: {
       sensorValue: number;
     };
     conveyor_sensor?: {
@@ -670,6 +727,7 @@ const Sidebar = ({ onDragStart }) => {
     { type: 'conveyor', label: 'Conveyor', initialData: { status: 'stopped' } },
     { type: 'counter', label: 'Counter', initialData: { value: 5, unit: 'units' } },
     { type: 'sensor', label: 'Sensor', initialData: { status: 'inactive', value: 0, unit: 'C' } },
+    { type: 'rack', label: 'Rack', initialData: { value: 0 } },
   ];
 
   return (
@@ -1029,12 +1087,34 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
             </div>
           </div>
         );
+      case 'rack':
+        return (
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-gray-300">Rack sensor</label>
+            <Select
+              name='rack_sensor'
+              onValueChange={(d) => handlePropFieldChange({ rack_sensor: d })}
+              defaultValue={''}
+            >
+              <SelectTrigger className="text-purple-100 w-full">
+                <SelectValue placeholder={"rack sensor"} />
+              </SelectTrigger>
+              <SelectContent>
+                {sensors?.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        );
       case 'conveyor':
         return (
           <div className="flex flex-col gap-2">
             <label className="text-sm text-gray-300">Conveyor sensor</label>
             <Select
-              name='valve_sensor'
+              name='conveyor_sensor'
               onValueChange={(d) => handlePropFieldChange({ conveyor_sensor: d })}
               defaultValue={''}
             >
@@ -1483,7 +1563,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
             // Handle tank level updates
             if (nodeData.data.propSensors.tank_level_sensor) {
               const rawValue = nodeData.data.propSensors.tank_level_sensor.sensorValue;
-              updates.level = calculateTankLevel(rawValue, 0, updates.tank_max_level || 300);
+              updates.level = calculateTankLevel(rawValue, 0, n.data.tank_max_level || 300);
             }
 
             // Handle counter updates
@@ -1497,6 +1577,9 @@ export const ScadaFlowBuilder = ({ ...props }) => {
             if (nodeData.data.propSensors.conveyor_sensor) {
               updates.value = nodeData.data.propSensors.conveyor_sensor.sensorValue;
               updates.status = nodeData.data.propSensors.conveyor_sensor.sensorValue === 1 ? 'running' : 'stopped';
+            }
+            if (nodeData.data.propSensors.rack_sensor) {
+              updates.value = nodeData.data.propSensors.rack_sensor.sensorValue;
             }
             // Handle temperature updates
             if (nodeData.data.propSensors.temperature_sensor) {

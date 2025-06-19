@@ -189,6 +189,13 @@ export class StreamManager {
 							name: data.label,
 						};
 					};
+					if (specialSensor.rack_sensor !== undefined) {
+						specialSensor.rack_sensor = {
+							sensor_id: sensor.sensor_id,
+							sensorValue: data.value,
+							name: data.label,
+						};
+					};
 					if (specialSensor.tank_level_sensor !== undefined) {
 						specialSensor.tank_level_sensor = {
 							sensor_id: sensor.sensor_id,
