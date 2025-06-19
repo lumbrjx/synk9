@@ -4,6 +4,7 @@ import {
   FaBellSlash
 } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
+import logo from '../../assets/logo.png';
 
 const navItems = [
   { name: 'Dashboard', route: '/', icon: <FaTachometerAlt />, key: 'dashboard' },
@@ -102,16 +103,20 @@ const Sidebar: React.FC<SidebarProps> = ({ onCollapse }) => {
       <div className="flex flex-col flex-grow">
         {/* Toggle Button */}
         <div className='flex justify-between'>
-          <span
-            className={`
+          <div className={`flex items-center ${isCollapsed ? 'ps-0 opacity-0 w-0' : 'opacity-100 w-auto ps-4'}`}>
+            <img src={logo} alt="Logo"
+              className={`w-8 h-8 mr-2 mt-5 ${isCollapsed ? 'opacity-0' : 'opacity-100'} `} />
+            <span
+              className={`
 						transition-all duration-200 ease-in-out whitespace-nowrap
             pt-4 text-2xl font-bold tracking-wide
             bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent
-						${isCollapsed ? 'ps-0 opacity-0 w-0' : 'opacity-100 w-auto ps-4'}
+						${isCollapsed ? 'ps-0 opacity-0 w-0' : 'opacity-100 w-auto'}
 					`}
-          >
-            {!isCollapsed ? 'Synk-9' : ""}
-          </span>
+            >
+              {!isCollapsed ? 'Synk-9' : ""}
+            </span>
+          </div>
           <button
             onClick={toggleSidebar}
             className="

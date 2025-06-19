@@ -1,7 +1,7 @@
 import { useAxiosQuery } from "@/hooks/get";
 import { query } from "@/queries/agent";
 import { useEffect, useState, useMemo, useRef } from "react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ReferenceArea } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, ReferenceArea, AreaChart, Area, ScatterChart, Scatter, ComposedChart, PieChart, Pie, Cell } from "recharts";
 import { Calendar, Clock, Play, Pause, RotateCcw, Download, ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -51,6 +51,9 @@ export default function RealTimeChart({
   const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+
+  // Chart type state
+  const [chartType, setChartType] = useState<'line' | 'area' | 'scatter' | 'composed' | 'pie' | 'heatmap'>('line');
 
   // Initialize with current date/time
   useEffect(() => {
@@ -494,6 +497,24 @@ export default function RealTimeChart({
           </div>
         </div>
 
+        {/* Chart Type Dropdown */}
+        <div className="flex items-center gap-2 mb-4">
+          <label htmlFor="chart-type" className="text-sm text-gray-300">Chart Type:</label>
+          <select
+            id="chart-type"
+            value={chartType}
+            onChange={e => setChartType(e.target.value as 'line' | 'area' | 'scatter' | 'composed' | 'pie' | 'heatmap')}
+            className="bg-gray-700 border border-gray-600 text-white px-2 py-1 rounded-md"
+          >
+            <option value="line">Line</option>
+            <option value="area">Area</option>
+            <option value="scatter">Scatter</option>
+            <option value="composed">Composed</option>
+            <option value="pie">Pie</option>
+            <option value="heatmap">Heatmap</option>
+          </select>
+        </div>
+
         {/* Timestamp Picker */}
         <div className="border-t border-gray-700 pt-4">
           <h3 className="text-sm font-medium text-gray-200 mb-3 flex items-center gap-2">
@@ -563,73 +584,260 @@ export default function RealTimeChart({
       {/* Chart */}
       <div className="h-96 bg-gray-800 border border-gray-700 rounded-lg p-2">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            ref={chartRef}
-            data={data}
-            margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-          >
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis
-              dataKey="x"
-              type="number"
-              scale="time"
-              domain={zoomDomain || xAxisDomain}
-              tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()}
-              stroke="#9CA3AF"
-              tick={{ fill: '#9CA3AF' }}
-            />
-            <YAxis
-              stroke="#9CA3AF"
-              tick={{ fill: '#9CA3AF' }}
-              tickFormatter={(value) => value.toFixed(1)}
-            />
-            <Tooltip content={<CustomTooltip />} />
-
-            {/* Reference area for zoom selection */}
-            {refAreaLeft && refAreaRight && (
-              <ReferenceArea
-                x1={parseInt(refAreaLeft)}
-                x2={parseInt(refAreaRight)}
-                strokeOpacity={0.3}
-                fill="#8884d8"
-                fillOpacity={0.3}
-              />
-            )}
-
-            {/* Render lines based on selected sensor */}
-            {selectedSensors.size > 0 ? (
-              Array.from(selectedSensors).map((key) => (
-                <Line
-                  key={key}
-                  type="monotone"
-                  dataKey={key}
-                  stroke={keyColorMap[key]}
-                  strokeWidth={2}
-                  dot={false}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                  name={key}
-                />
-              ))
-            ) : (
-              Array.from(sensorKeys).map((key) => (
-                <Line
-                  key={key}
-                  type="monotone"
-                  dataKey={key}
-                  stroke={keyColorMap[key]}
-                  strokeWidth={2}
-                  dot={false}
-                  connectNulls={false}
-                  isAnimationActive={false}
-                  name={key}
-                />
-              ))
-            )}
-          </LineChart>
+          {(() => {
+            if (chartType === 'line') {
+              return (
+                <LineChart
+                  ref={chartRef}
+                  data={data}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                  onMouseDown={handleMouseDown}
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="x"
+                    type="number"
+                    scale="time"
+                    domain={zoomDomain || xAxisDomain}
+                    tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()}
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                    tickFormatter={(value) => value.toFixed(1)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {refAreaLeft && refAreaRight && (
+                    <ReferenceArea
+                      x1={parseInt(refAreaLeft)}
+                      x2={parseInt(refAreaRight)}
+                      strokeOpacity={0.3}
+                      fill="#8884d8"
+                      fillOpacity={0.3}
+                    />
+                  )}
+                  {(selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys)).map((key) => (
+                    <Line
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={keyColorMap[key]}
+                      strokeWidth={2}
+                      dot={false}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                      name={key}
+                    />
+                  ))}
+                </LineChart>
+              );
+            } else if (chartType === 'area') {
+              return (
+                <AreaChart
+                  data={data}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="x"
+                    type="number"
+                    scale="time"
+                    domain={zoomDomain || xAxisDomain}
+                    tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()}
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                    tickFormatter={(value) => value.toFixed(1)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {(selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys)).map((key) => (
+                    <Area
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={keyColorMap[key]}
+                      fill={keyColorMap[key]}
+                      strokeWidth={2}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                      name={key}
+                    />
+                  ))}
+                </AreaChart>
+              );
+            } else if (chartType === 'scatter') {
+              return (
+                <ScatterChart
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="x"
+                    type="number"
+                    scale="time"
+                    domain={zoomDomain || xAxisDomain}
+                    tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()}
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                    tickFormatter={(value) => value.toFixed(1)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {(selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys)).map((key) => (
+                    <Scatter
+                      key={key}
+                      name={key}
+                      data={data}
+                      line={{ stroke: keyColorMap[key], strokeWidth: 2 }}
+                      fill={keyColorMap[key]}
+                      dataKey={key}
+                    />
+                  ))}
+                </ScatterChart>
+              );
+            } else if (chartType === 'composed') {
+              return (
+                <ComposedChart
+                  data={data}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis
+                    dataKey="x"
+                    type="number"
+                    scale="time"
+                    domain={zoomDomain || xAxisDomain}
+                    tickFormatter={(unixTime) => new Date(unixTime).toLocaleTimeString()}
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                  />
+                  <YAxis
+                    stroke="#9CA3AF"
+                    tick={{ fill: '#9CA3AF' }}
+                    tickFormatter={(value) => value.toFixed(1)}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {(selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys)).map((key) => [
+                    <Line
+                      key={key + '-line'}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={keyColorMap[key]}
+                      strokeWidth={2}
+                      dot={false}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                      name={key + ' (Line)'}
+                    />,
+                    <Area
+                      key={key + '-area'}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={keyColorMap[key]}
+                      fill={keyColorMap[key]}
+                      strokeWidth={1}
+                      connectNulls={false}
+                      isAnimationActive={false}
+                      name={key + ' (Area)'}
+                      fillOpacity={0.2}
+                    />
+                  ])}
+                </ComposedChart>
+              );
+            } else if (chartType === 'pie') {
+              // Pie chart: show the latest data point as a pie
+              const latest = data[data.length - 1] || {};
+              const pieData = (selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys))
+                .map((key) => ({ name: key, value: latest[key] ?? 0 }));
+              return (
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {pieData.map((entry, idx) => (
+                      <Cell key={`cell-${entry.name}`} fill={keyColorMap[entry.name]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              );
+            } else if (chartType === 'heatmap') {
+              // Heatmap: X = time, Y = sensor, color = value
+              // We'll use a simple SVG grid
+              const times = data.map(d => d.x);
+              const sensors = (selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys));
+              // Normalize values for color
+              let min = Infinity, max = -Infinity;
+              data.forEach(d => sensors.forEach(k => {
+                const v = d[k];
+                if (typeof v === 'number') {
+                  min = Math.min(min, v);
+                  max = Math.max(max, v);
+                }
+              }));
+              const colorFor = (v: number) => {
+                if (typeof v !== 'number' || isNaN(v)) return '#222';
+                const t = (v - min) / (max - min + 1e-9);
+                // Blue to red
+                const r = Math.round(255 * t);
+                const g = 40;
+                const b = Math.round(255 * (1 - t));
+                return `rgb(${r},${g},${b})`;
+              };
+              const cellW = 20, cellH = 20;
+              return (
+                <svg width={Math.max(300, times.length * cellW)} height={Math.max(100, sensors.length * cellH)}>
+                  {/* Y labels */}
+                  {sensors.map((k, i) => (
+                    <text key={k} x={0} y={i * cellH + cellH / 2 + 5} fontSize={12} fill="#ccc">{k}</text>
+                  ))}
+                  {/* X labels */}
+                  {times.map((t, j) => (
+                    <text key={t} x={j * cellW + 50} y={12} fontSize={10} fill="#ccc" textAnchor="middle">
+                      {new Date(t).toLocaleTimeString()}
+                    </text>
+                  ))}
+                  {/* Cells */}
+                  {sensors.map((k, i) => times.map((t, j) => {
+                    const d = data[j];
+                    const v = d ? d[k] : undefined;
+                    return (
+                      <rect
+                        key={k + '-' + t}
+                        x={j * cellW + 50}
+                        y={i * cellH + 20}
+                        width={cellW - 2}
+                        height={cellH - 2}
+                        fill={colorFor(typeof v === 'number' ? v : NaN)}
+                        stroke="#333"
+                        strokeWidth={0.5}
+                      >
+                        <title>{`${k} @ ${new Date(t).toLocaleTimeString()}: ${v}`}</title>
+                      </rect>
+                    );
+                  }))}
+                </svg>
+              );
+            } else {
+              return <div />;
+            }
+          })()}
         </ResponsiveContainer>
       </div>
 

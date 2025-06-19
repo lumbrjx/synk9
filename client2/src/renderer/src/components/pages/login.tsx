@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { toast } from 'sonner';
 import { create } from '@/mutations/agent';
 import { queryClient } from '@/main';
+import logo from '../../assets/logo.png';
 const formSchema = z.object({
   username: z.string().min(2),
   password: z.string().min(2),
@@ -63,12 +64,16 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       <div className="max-w-md w-full space-y-8 p-8 bg-gray-800 rounded-lg shadow-xl">
         {/* Header */}
-        <div className="text-center">
+        <div className="text-center flex flex-col items-center">
+          <img src={logo} alt="Logo"
+            className={`w-24 h-24 mr-2 mt-2`} />
           <span
             className={`
 						transition-all duration-200 ease-in-out whitespace-nowrap
-            text-3xl font-bold tracking-wide mb-2
+            pt-4 text-3xl font-bold tracking-wide
             bg-gradient-to-r from-gray-300 to-gray-400 bg-clip-text text-transparent
+            mb-4
+
 					`}
           >
             Synk-9
