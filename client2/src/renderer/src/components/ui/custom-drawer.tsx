@@ -39,14 +39,14 @@ type CustomDrawerType = React.HTMLAttributes<HTMLElement> & {
 
 export const CustomDrawer: FC<CustomDrawerType> = ({ buttonDisabled = false, open, onOpenChange, ...props }) => {
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} setBackgroundColorOnScale={true} onOpenChange={onOpenChange}>
       <DrawerTrigger asChild>
         <Button variant="outline" className="text-black h-10 px-4" disabled={buttonDisabled}>
           {props.topic}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <div className="mx-auto w-full bg-primary max-w-sm font-lexend">
+      <DrawerContent className='bg-primary'>
+        <div className="mx-auto w-full  max-w-sm font-lexend">
           <DrawerHeader>
             <DrawerTitle className="text-purple-200 text-4xl text-center">
               {props.drawerTitle}

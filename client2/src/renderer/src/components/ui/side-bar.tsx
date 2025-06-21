@@ -1,16 +1,17 @@
 import React, { useState, useEffect, JSX } from 'react';
 import {
-  FaTachometerAlt, FaCogs, FaUsers, FaTools, FaAngleLeft, FaAngleRight,
+  FaTachometerAlt, FaCogs, FaTools, FaAngleLeft, FaAngleRight,
   FaBellSlash
 } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import logo from '../../assets/logo.png';
+import { Activity, Tags } from 'lucide-react';
 
 const navItems = [
   { name: 'Dashboard', route: '/', icon: <FaTachometerAlt />, key: 'dashboard' },
   { name: 'Agents', route: '/agents', icon: <FaTools />, key: 'agents' },
-  { name: 'Processes', route: '/processes', icon: <FaUsers />, key: 'processes' },
-  { name: 'Sensors', route: '/sensors', icon: <FaUsers />, key: 'sensors' },
+  { name: 'Processes', route: '/processes', icon: <Activity />, key: 'processes' },
+  { name: 'Tags', route: '/sensors', icon: <Tags />, key: 'sensors' },
   { name: 'Alerts', route: '/alert-topic', icon: <FaBellSlash />, key: 'alerts' },
 ];
 

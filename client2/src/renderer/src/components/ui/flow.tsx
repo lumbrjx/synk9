@@ -873,14 +873,14 @@ const PropertiesPanel = ({ setSelectedNode, nodeSensors, setNodeSensors, nodePro
                 onClick={handlePause}
                 className="bg-yellow-300 hover:bg-yellow-200 text-black"
               >
-                Pause Process
+                Pause Monitoring
               </Button>
             ) : (
               <Button
                 onClick={handleStart}
                 className="bg-green-300 hover:bg-green-200 text-black"
               >
-                Start Process
+                Start Monitoring
               </Button>
             )}
 

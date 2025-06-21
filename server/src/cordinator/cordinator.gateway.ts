@@ -37,7 +37,7 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		private parserService: ParsersService,
 	) { }
 
-	afterInit(server: Server) {
+	async afterInit(server: Server) {
 		this.server = server;
 		this.logger.log('WebSocket server initialized');
 
@@ -51,7 +51,12 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 		this.eventBus.on("alert:ai").subscribe(this.aiAlert.bind(this));
 		this.eventBus.on("agent:updated").subscribe(this.agentUpdate.bind(this));
 		this.eventBus.on("agent:cleanup").subscribe(this.agentCleanUp.bind(this));
-
+		const agents = await this.agentService.findAll();
+		if (agents && agents.length) {
+			for (const agent of agents) {
+				this.agentService.changeAgentState(agent.id, AgentState.offline)
+			}
+		}
 	}
 
 	serverEmit<K extends AgentEventType>(event: K, payload: any) {

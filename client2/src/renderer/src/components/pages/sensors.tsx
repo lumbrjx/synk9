@@ -33,7 +33,6 @@ export default function Sensors(): ReactElement {
     id: string
     name: string
     description: string
-    status: 'online' | 'offline' | 'error' | 'pending'
     plcId?: number
     start_register?:number
     register?:string
@@ -45,7 +44,7 @@ export default function Sensors(): ReactElement {
   const columns: ColumnDef<Sensor>[] = [
     {
       accessorKey: 'name',
-      header: 'Sensor Name',
+      header: 'Tag Name',
       cell: ({ row }) => (
         <div className="flex items-center gap-2 font-medium">
           <Gauge className="h-4 w-4 text-sky-400" />
@@ -61,20 +60,6 @@ export default function Sensors(): ReactElement {
           {row.getValue('description') || 'No description'}
         </div>
       )
-    },
-    {
-      accessorKey: 'status',
-      header: 'Status',
-      cell: ({ }) => {
-        return (
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-900/30 text-green-400 border border-green-900">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              Online
-            </span>
-          </div>
-        )
-      }
     },
     {
       accessorKey: 'registers',
@@ -146,13 +131,13 @@ export default function Sensors(): ReactElement {
 
     options: {
       onSuccess: () => {
-        toast.success('Sensor created successfully!')
+        toast.success('Tag created successfully!')
         queryClient.invalidateQueries({ queryKey: ['sensors'] })
         setDrawerOpen(false) // Close drawer when sensor is created
       },
       onError: (e) => {
         console.error('Create error', e)
-        toast.error('Failed to create sensor.')
+        toast.error('Failed to create tag.')
       }
     }
   })
@@ -162,7 +147,7 @@ export default function Sensors(): ReactElement {
   const fields = [
     {
       name: 'name',
-      label: 'Sensor Name',
+      label: 'Tag Name',
       placeholder: 'temperature-sensor',
       type: 'input' as const
     },
@@ -217,10 +202,10 @@ export default function Sensors(): ReactElement {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Database className="h-8 w-8 text-sky-400" />
-            Sensors
+           Tags
           </h1>
           <p className="text-muted-foreground mt-1">
-            Monitor and manage your connected sensor devices
+            Monitor and manage your connected tag devices
           </p>
         </div>
         <div className="flex gap-4">
@@ -237,9 +222,9 @@ export default function Sensors(): ReactElement {
             formFields={fields}
             defaultValues={defaultValues}
             onSubmit={(d: any) => onSubmit(d)}
-            drawerDescription="Connect a new sensor to the system."
-            drawerTitle="Add New Sensor"
-            topic="Add Sensor"
+            drawerDescription="Connect a new tag to the system."
+            drawerTitle="Add New Tag"
+            topic="Add Tag"
             open={drawerOpen}
             onOpenChange={setDrawerOpen}
           />
@@ -250,7 +235,7 @@ export default function Sensors(): ReactElement {
         <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Total Sensors</p>
+              <p className="text-muted-foreground text-sm">Total Tags</p>
               <h3 className="text-3xl font-bold mt-1">{sensorCount}</h3>
             </div>
             <div className="bg-primary/20 p-3 rounded-full">
@@ -262,7 +247,7 @@ export default function Sensors(): ReactElement {
         <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Online Sensors</p>
+              <p className="text-muted-foreground text-sm">Online Tags</p>
               <h3 className="text-3xl font-bold mt-1">{sensorCount}</h3>{' '}
               {/* All sensors are online */}
             </div>
@@ -275,7 +260,7 @@ export default function Sensors(): ReactElement {
         <div className="bg-gray-800 rounded-lg shadow p-6 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-muted-foreground text-sm">Offline Sensors</p>
+              <p className="text-muted-foreground text-sm">Offline Tags</p>
               <h3 className="text-3xl font-bold mt-1">0</h3> {/* No offline sensors */}
             </div>
             <div className="bg-gray-500/20 p-3 rounded-full">
@@ -290,7 +275,7 @@ export default function Sensors(): ReactElement {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <Activity className="h-5 w-5 text-sky-400" />
-              Sensor Inventory
+              Tag Inventory
             </h2>
           </div>
           <div className="h-px bg-gray-700 my-2" />
@@ -300,14 +285,14 @@ export default function Sensors(): ReactElement {
               <div className="animate-spin">
                 <CircleDashed className="h-10 w-10 text-primary" />
               </div>
-              <p className="text-muted-foreground mt-4">Loading sensors data...</p>
+              <p className="text-muted-foreground mt-4">Loading tag data...</p>
             </div>
           ) : isError ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <AlertTriangle className="h-12 w-12 text-red-500 mb-4" />
-              <h3 className="text-lg font-medium mb-1">Failed to load sensors</h3>
+              <h3 className="text-lg font-medium mb-1">Failed to load tags</h3>
               <p className="text-muted-foreground mb-4 max-w-md">
-                There was an error retrieving sensor data. Please try refreshing.
+                There was an error retrieving tag data. Please try refreshing.
               </p>
               <button
                 onClick={() => refetch()}
@@ -319,15 +304,15 @@ export default function Sensors(): ReactElement {
           ) : agents?.response?.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <Database className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-1">No sensors found</h3>
+              <h3 className="text-lg font-medium mb-1">No tags found</h3>
               <p className="text-muted-foreground mb-4">
-                You haven&apos;t added any sensors yet. Create your first sensor to get started.
+                You haven&apos;t added any tags yet. Create your first tag to get started.
               </p>
               <button
                 onClick={() => setDrawerOpen(true)}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
               >
-                Add Your First Sensor
+                Add Your First Tag
               </button>
             </div>
           ) : (

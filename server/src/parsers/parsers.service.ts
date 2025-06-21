@@ -19,7 +19,7 @@ export class LogoParsersService implements ParserSignature {
 			if (num >= 1 && num <= 24) {
 				return {
 					type: 'Discrete Input',
-					modbusAddress: num,
+					modbusAddress: num - 1,
 					direction: 'Read',
 					dataType: 'bit'
 				};
@@ -33,7 +33,7 @@ export class LogoParsersService implements ParserSignature {
 			if (num >= 1 && num <= 20) {
 				return {
 					type: 'Coil',
-					modbusAddress: 8192 + num,
+					modbusAddress: 8192 + num - 1,
 					direction: 'Read/Write',
 					dataType: 'bit'
 				};
@@ -47,7 +47,7 @@ export class LogoParsersService implements ParserSignature {
 			if (num >= 1 && num <= 64) {
 				return {
 					type: 'Coil',
-					modbusAddress: 8256 + num,
+					modbusAddress: 8256 + num - 1,
 					direction: 'Read/Write',
 					dataType: 'bit'
 				};
@@ -79,7 +79,7 @@ export class LogoParsersService implements ParserSignature {
 			if (num >= 1 && num <= 8) {
 				return {
 					type: 'Input Register',
-					modbusAddress: num,
+					modbusAddress: num - 1,
 					direction: 'Read',
 					dataType: 'word'
 				};
@@ -110,7 +110,7 @@ export class LogoParsersService implements ParserSignature {
 			if (num >= 1 && num <= 8) {
 				return {
 					type: 'REG',
-					modbusAddress: 512 + num,
+					modbusAddress: 512 + num - 1,
 					direction: 'Read/Write',
 					dataType: 'word'
 				};
@@ -124,7 +124,7 @@ export class LogoParsersService implements ParserSignature {
 			if (num >= 1 && num <= 64) {
 				return {
 					type: 'REG',
-					modbusAddress: 528 + num,
+					modbusAddress: 528 + num - 1,
 					direction: 'Read/Write',
 					dataType: 'word'
 				};
