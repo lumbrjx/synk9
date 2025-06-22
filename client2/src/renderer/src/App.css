@@ -9,8 +9,10 @@
   --color-midnight: #121063;
 }
 body {
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto; /* or scroll if you want scrollbars always visible */
 }
+
 @theme inline {
     --radius-sm: calc(var(--radius) - 4px);
     --radius-md: calc(var(--radius) - 2px);

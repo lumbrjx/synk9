@@ -22,7 +22,7 @@ export function DataTable<TData, TValue>({
   route,
   columns,
   data,
-  maxHeight = '600px' // Default height if not specified
+  maxHeight = '500px' // Default height if not specified
 }: DataTableProps<TData, TValue>): ReactElement {
   const navigate = useNavigate()
   const table = useReactTable({
@@ -33,7 +33,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="rounded-md border w-full overflow-hidden">
-      <ScrollArea className="w-full overflow-hidden" style={{ maxHeight }}>
+      <ScrollArea className="w-full overflow-x-hidden" style={{ maxHeight }}>
         <Table className="w-full">
           <TableHeader className="sticky top-0 z-10 hover:bg-transparent">
             {table.getHeaderGroups().map((headerGroup) => (

@@ -1,13 +1,23 @@
 [
   {
     "type": "button",
-    "address": "V54.1",
+    "address": "V55.2",
     "label": "OFF"
   },
   {
     "type": "button",
-    "address": "V54.1",
+    "address": "V55.2",
     "label": "ON"
+  },
+ {
+    "type": "button",
+    "address": "V55.1",
+    "label": "BPSO-HMI"
+  },
+ {
+    "type": "button",
+    "address": "V55.1",
+    "label": "BPSF-HMI"
   },
   {
     "type": "input",
@@ -22,6 +32,6 @@
   {
     "type": "input",
     "address": "VW230",
-    "label": "Cyan"
+    "label": "Blue"
   }
 ]

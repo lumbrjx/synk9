@@ -17,7 +17,7 @@ update_hostname() {
   local new_hostname="$2"
 
   echo "Updating HOSTNAME on $remote to $new_hostname"
-  sshpass -p "pi" ssh "$remote" "sed -i 's/^HOSTNAME=.*/HOSTNAME=$new_hostname/' \$HOME/$ENV_FILE" \
+  sshpass -p "pi" ssh "$remote" "sed -i \"s|^HOSTNAME=.*|HOSTNAME=$new_hostname|\" \$HOME/$ENV_FILE" \
     && echo "✔ $remote updated" || echo "❌ Failed to update $remote"
 }
 
@@ -26,17 +26,18 @@ update_backend_url() {
   local new_hostname="$2"
 
   echo "Updating WS_URL on $remote to $new_hostname"
-  sshpass -p "pi" ssh "$remote" "sed -i 's/^WS_URL=.*/WS_URL=$new_hostname/' \$HOME/$ENV_FILE" \
+  sshpass -p "pi" ssh "$remote" "sed -i \"s|^WS_URL=.*|WS_URL=$new_hostname|\" \$HOME/$ENV_FILE" \
     && echo "✔ $remote updated" || echo "❌ Failed to update $remote"
 }
 
 start_agent() {
   local remote="$1"
 
-  echo "Starting agent on $remote"
-  sshpass -p "pi" ssh "$remote" "./agent" \
+  echo "Starting agent on $remote in background"
+  sshpass -p "pi" ssh "$remote" "nohup ./agent > agent.log 2>&1 &" \
     && echo "✔ $remote agent started" || echo "❌ Failed to start agent on $remote"
 }
+
 
 update_hostname "$REMOTE1" "$HOSTNAME1"
 update_hostname "$REMOTE2" "$HOSTNAME2"

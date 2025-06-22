@@ -8,7 +8,7 @@ import { EventBusService } from 'src/event-bus/event-bus.service';
 
 @Injectable()
 export class AgentService {
-	private PLC_MODELS = ["LOGO!"];
+	private PLC_MODELS = ["LOGO!", "PLCSIM ADVANCED 5.0"];
 	constructor(
 		@InjectRepository(Agent)
 		private agentRepository: Repository<Agent>,

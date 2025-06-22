@@ -18,7 +18,7 @@ type DataPoint = {
   [key: string]: number; // dynamic keys for each sensor
 };
 
-const MAX_POINTS = 50;
+const MAX_POINTS = 100;
 
 const COLORS = [
   "#8884d8", "#82ca9d", "#ffc658", "#ff7300", "#00ff7f",
@@ -70,6 +70,16 @@ export default function RealTimeChart({
   const xAxisDomain = useMemo(() => {
     return data.length > 0 ? ["dataMin", "dataMax"] : [0, 1];
   }, [data]);
+
+  // Clean and preprocess data for rendering
+  const cleanData = useMemo(() => {
+    return data.filter(point => {
+      // Keep points that have at least one valid sensor value
+      return Array.from(sensorKeys).some(key => 
+        point[key] !== null && point[key] !== undefined && !isNaN(point[key])
+      );
+    });
+  }, [data, sensorKeys]);
 
   const keyColorMap = useMemo(() => {
     const map: { [key: string]: string } = {};
@@ -176,34 +186,53 @@ export default function RealTimeChart({
       if (isPaused) return;
 
       const timestamp = new Date(payload.time).getTime() || Date.now();
+      
+      // Debug logging
+      console.log(`Received sensor data: ${payload.key} = ${payload.value} at ${new Date(timestamp).toLocaleTimeString()}`);
 
       setData((prev) => {
+        // Find existing point within 2 seconds (more lenient matching)
         const existingPointIndex = prev.findIndex(
-          (point) => Math.abs(point.x - timestamp) < 1000
+          (point) => Math.abs(point.x - timestamp) < 2000
         );
 
         let updated: DataPoint[];
 
         if (existingPointIndex >= 0) {
+          // Update existing point with new sensor data
           updated = [...prev];
           updated[existingPointIndex] = {
             ...updated[existingPointIndex],
             [payload.key]: payload.value,
           };
         } else {
+          // Create new point with only the current sensor data
           const newPoint: DataPoint = {
             x: timestamp,
             [payload.key]: payload.value,
           };
+          
           updated = [...prev, newPoint];
         }
+
+        // Filter out data points that have no valid values
+        updated = updated.filter(point => {
+          const hasValidData = Array.from(sensorKeys).some(key => 
+            point[key] !== null && point[key] !== undefined && !isNaN(point[key])
+          );
+          return hasValidData || point[payload.key] !== null;
+        });
 
         return updated.length > MAX_POINTS
           ? updated.slice(-MAX_POINTS)
           : updated;
       });
 
-      setSensorKeys((prev) => new Set([...prev, payload.key]));
+      setSensorKeys((prev) => {
+        const newKeys = new Set([...prev, payload.key]);
+        console.log(`Active sensors: ${Array.from(newKeys).join(', ')}`);
+        return newKeys;
+      });
     };
 
     socket?.on("data", handler);
@@ -211,7 +240,7 @@ export default function RealTimeChart({
     return () => {
       socket?.off("data", handler);
     };
-  }, [socket, isPaused, isHistoricalMode]);
+  }, [socket, isPaused, isHistoricalMode, sensorKeys]);
 
   const handleApplyTimeRange = () => {
     setIsHistoricalMode(true);
@@ -589,7 +618,7 @@ export default function RealTimeChart({
               return (
                 <LineChart
                   ref={chartRef}
-                  data={data}
+                  data={cleanData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                   onMouseDown={handleMouseDown}
                   onMouseMove={handleMouseMove}
@@ -628,7 +657,7 @@ export default function RealTimeChart({
                       stroke={keyColorMap[key]}
                       strokeWidth={2}
                       dot={false}
-                      connectNulls={false}
+                      connectNulls={true}
                       isAnimationActive={false}
                       name={key}
                     />
@@ -638,7 +667,7 @@ export default function RealTimeChart({
             } else if (chartType === 'area') {
               return (
                 <AreaChart
-                  data={data}
+                  data={cleanData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -665,7 +694,7 @@ export default function RealTimeChart({
                       stroke={keyColorMap[key]}
                       fill={keyColorMap[key]}
                       strokeWidth={2}
-                      connectNulls={false}
+                      connectNulls={true}
                       isAnimationActive={false}
                       name={key}
                     />
@@ -697,7 +726,7 @@ export default function RealTimeChart({
                     <Scatter
                       key={key}
                       name={key}
-                      data={data}
+                      data={cleanData}
                       line={{ stroke: keyColorMap[key], strokeWidth: 2 }}
                       fill={keyColorMap[key]}
                       dataKey={key}
@@ -708,7 +737,7 @@ export default function RealTimeChart({
             } else if (chartType === 'composed') {
               return (
                 <ComposedChart
-                  data={data}
+                  data={cleanData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -735,7 +764,7 @@ export default function RealTimeChart({
                       stroke={keyColorMap[key]}
                       strokeWidth={2}
                       dot={false}
-                      connectNulls={false}
+                      connectNulls={true}
                       isAnimationActive={false}
                       name={key + ' (Line)'}
                     />,
@@ -746,7 +775,7 @@ export default function RealTimeChart({
                       stroke={keyColorMap[key]}
                       fill={keyColorMap[key]}
                       strokeWidth={1}
-                      connectNulls={false}
+                      connectNulls={true}
                       isAnimationActive={false}
                       name={key + ' (Area)'}
                       fillOpacity={0.2}
@@ -756,7 +785,7 @@ export default function RealTimeChart({
               );
             } else if (chartType === 'pie') {
               // Pie chart: show the latest data point as a pie
-              const latest = data[data.length - 1] || {};
+              const latest = cleanData[cleanData.length - 1] || {};
               const pieData = (selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys))
                 .map((key) => ({ name: key, value: latest[key] ?? 0 }));
               return (
@@ -780,11 +809,11 @@ export default function RealTimeChart({
             } else if (chartType === 'heatmap') {
               // Heatmap: X = time, Y = sensor, color = value
               // We'll use a simple SVG grid
-              const times = data.map(d => d.x);
+              const times = cleanData.map(d => d.x);
               const sensors = (selectedSensors.size > 0 ? Array.from(selectedSensors) : Array.from(sensorKeys));
               // Normalize values for color
               let min = Infinity, max = -Infinity;
-              data.forEach(d => sensors.forEach(k => {
+              cleanData.forEach(d => sensors.forEach(k => {
                 const v = d[k];
                 if (typeof v === 'number') {
                   min = Math.min(min, v);
@@ -815,7 +844,7 @@ export default function RealTimeChart({
                   ))}
                   {/* Cells */}
                   {sensors.map((k, i) => times.map((t, j) => {
-                    const d = data[j];
+                    const d = cleanData[j];
                     const v = d ? d[k] : undefined;
                     return (
                       <rect

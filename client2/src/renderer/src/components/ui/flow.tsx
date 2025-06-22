@@ -1572,7 +1572,7 @@ export const ScadaFlowBuilder = ({ ...props }) => {
             }
             if (nodeData.data.propSensors.valve_sensor) {
               updates.value = nodeData.data.propSensors.valve_sensor.sensorValue;
-              updates.status = nodeData.data.propSensors.valve_sensor.sensorValue === 1 ? 'open' : 'closed';
+              updates.status = nodeData.data.propSensors.valve_sensor.sensorValue === 0 ? 'closed' : 'open';
             }
             if (nodeData.data.propSensors.conveyor_sensor) {
               updates.value = nodeData.data.propSensors.conveyor_sensor.sensorValue;

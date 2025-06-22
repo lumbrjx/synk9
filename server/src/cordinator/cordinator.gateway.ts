@@ -215,6 +215,28 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 			})
 			return;
 		}
+		if (parsedData.action.split("-")[0] === "BPSO") {
+			const regOrCoil = parser?.addressToModbus(parsedData.triggerAddress)
+
+			this.notifyAgentViaFingerprint("Write", {
+				agentFingerprint: process.agent.fingerprint,
+				reg: regOrCoil?.modbusAddress,
+				val: 1,
+				r_type: regOrCoil?.type?.toUpperCase() as string
+			})
+			return;
+		}
+		if (parsedData.action.split("-")[0] === "BPSF") {
+			const regOrCoil = parser?.addressToModbus(parsedData.triggerAddress)
+
+			this.notifyAgentViaFingerprint("Write", {
+				agentFingerprint: process.agent.fingerprint,
+				reg: regOrCoil?.modbusAddress,
+				val: 0,
+				r_type: regOrCoil?.type?.toUpperCase() as string
+			})
+			return;
+		}
 		if (parsedData.action === "OFF") {
 			const regOrCoil = parser?.addressToModbus(parsedData.triggerAddress)
 
