@@ -190,8 +190,10 @@ export class CordinatorGateway implements OnGatewayInit, OnGatewayConnection, On
 	): Promise<void> {
 		this.logger.log(`Received message: ${JSON.stringify(data)}`);
 		const parsedData = data
-		const process = await this.processService.findOne(parsedData.data.processId, ['steps', 'agent']) as Process
+		const process = await this.processService.findOne(parsedData.processId, ['steps', 'agent']) as Process
+		console.log("process for", process.name);
 		const parser = this.parserService.getParser(process.agent.plcId);
+		console.log("Im tHE parser", parser);
 
 		console.log("i will", parsedData, process)
 		if (parsedData.action === "ON") {

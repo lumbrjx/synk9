@@ -6,6 +6,7 @@ import { ParserSignature } from './parser-builder.service';
 @Injectable()
 export class LogoParsersService implements ParserSignature {
 	addressToModbus(address: string) {
+		console.log("I got this now", address)
 		// Convert address to uppercase and trim whitespace
 		address = address.toString().trim().toUpperCase();
 
@@ -132,6 +133,7 @@ export class LogoParsersService implements ParserSignature {
 		}
 
 		// Address not found or invalid
+		console.log("I can't find");
 		return {
 			error: `Invalid or unsupported address: ${address}`
 		};
